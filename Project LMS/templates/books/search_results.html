@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Search Results</h1>
+    {% if query %}
+        <p>Showing results for: <strong>{{ query }}</strong></p>
+    {% endif %}
+    {% if page_obj %}
+        <div class="row">
+            {% for book in page_obj %}
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
+                    {% else %}
+                        <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <span>No Image</span>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ book.title }}</h5>
+                        <p class="card-text">by {{ book.author }}</p>
+                        <p class="card-text"><small class="text-muted">ISBN: {{ book.isbn }}</small></p>
+                        <a href="{% url 'book_detail' book.pk %}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1&q={{ query }}">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&q={{ query }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+</div>
+{% endblock %}

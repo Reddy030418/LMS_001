@@ -1,0 +1,53 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Manage Requests - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Book Requests</h2>
+    
+    {% if requests %}
+        <div class="table-responsive">
+            <form method="post">
+                {% csrf_token %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Requested On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                        <tr>
+                            <td>{{ request.user.username }}</td>
+                            <td><a href="{% url 'book_detail' request.book.id %}">{{ request.book.title }}</a></td>
+                            <td>{{ request.book.author }}</td>
+                            <td>{{ request.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <button type="submit" name="request_id" value="{{ request.id }}" 
+                                        name="action" value="approve" class="btn btn-success btn-sm">
+                                    Approve
+                                </button>
+                                <button type="submit" name="request_id" value="{{ request.id }}" 
+                                        name="action" value="reject" class="btn btn-danger btn-sm">
+                                    Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <h5>No pending requests</h5>
+            <p>All requests have been processed.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ book.title }} – ANU Library{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+  <div class="col-md-4">
+    {% if book.cover_image %}
+      <img src="{{ book.cover_image.url }}" class="img-fluid rounded shadow-sm" alt="{{ book.title }}" />
+    {% else %}
+      <div class="book-cover-placeholder w-100 d-flex align-items-center justify-content-center" style="height:280px;">
+        {{ book.title|truncatechars:50 }}
+      </div>
+    {% endif %}
+  </div>
+  <div class="col-md-8">
+    <h3>{{ book.title }}</h3>
+    {% if book.author %}
+      <p class="mb-1"><strong>Author:</strong> {{ book.author }}</p>
+    {% endif %}
+    {% if book.department %}
+      <p class="mb-1"><strong>Department:</strong> {{ book.department.name }}</p>
+    {% endif %}
+    {% if book.subject %}
+      <p class="mb-1"><strong>Subject:</strong> {{ book.subject }}</p>
+    {% endif %}
+    {% if book.isbn %}
+      <p class="mb-1"><strong>ISBN:</strong> {{ book.isbn }}</p>
+    {% endif %}
+    {% if book.rack_number %}
+      <p class="mb-1"><strong>Rack:</strong> {{ book.rack_number }}</p>
+    {% endif %}
+    <p class="mb-1">
+      <strong>Total Copies:</strong> {{ book.total_copies }} |
+      <strong>Available:</strong>
+      {% if book.available_copies > 0 %}
+        <span class="text-success">{{ book.available_copies }}</span>
+      {% else %}
+        <span class="text-danger">0 (All issued)</span>
+      {% endif %}
+    </p>
+
+    {% if book.description %}
+      <p class="mt-2">{{ book.description }}</p>
+    {% endif %}
+
+    <hr>
+
+    <!-- Request button logic -->
+    {% if not user.is_authenticated %}
+      <p class="text-muted mb-2">
+        Please <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to request this book.
+      </p>
+      <button class="btn btn-secondary" disabled>Request This Book</button>
+
+    {% else %}
+      {% if active_loan %}
+        <button class="btn btn-success" disabled>
+          Already issued to you
+        </button>
+      {% elif pending_request %}
+        <button class="btn btn-warning" disabled>
+          Request pending approval
+        </button>
+      {% elif book.available_copies <= 0 %}
+        <button class="btn btn-secondary" disabled>
+          Not available (all copies issued)
+        </button>
+      {% else %}
+        <form method="post" action="{% url 'request_book' book.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">
+            Request This Book
+          </button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

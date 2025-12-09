@@ -1,0 +1,168 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Admin Dashboard – ANU Library{% endblock %}
+
+{% block content %}
+<h3 class="mt-3">Admin Dashboard</h3>
+
+<div class="row mt-3 g-3">
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted">Total Books</h6>
+        <h3>{{ total_books }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted">Total Members</h6>
+        <h3>{{ total_members }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted">Active Loans</h6>
+        <h3>{{ active_loans }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted">Overdue</h6>
+        <h3 class="text-danger">{{ overdue }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body" style="height: 396px;">
+        <h6 class="mb-3">Issues per Department</h6>
+        <canvas id="issuesChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body" style="height: 396px;">
+        <h6 class="mb-3">Active Loans per Department</h6>
+        <canvas id="loansChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="mb-2">Quick Reports</h6>
+        <form method="get" class="mb-3">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <input type="date" name="start" class="form-control form-control-sm" placeholder="Start Date">
+            </div>
+            <div class="col-md-3">
+              <input type="date" name="end" class="form-control form-control-sm" placeholder="End Date">
+            </div>
+            <div class="col-md-3">
+              <button type="submit" formaction="{% url 'export_csv' %}" class="btn btn-outline-dark btn-sm w-100">
+                <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button type="submit" formaction="{% url 'export_pdf' %}" class="btn btn-outline-dark btn-sm w-100">
+                <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Issues Chart (Bar)
+  (function() {
+    const ctx = document.getElementById('issuesChart');
+    if (!ctx) return;
+
+    const issuesData = {{ issues_data|safe }};
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: issuesData.labels,
+        datasets: [{
+          label: 'Total Issues',
+          data: issuesData.data,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  })();
+
+  // Loans Chart (Pie)
+  (function() {
+    const ctx = document.getElementById('loansChart');
+    if (!ctx) return;
+
+    const loansData = {{ loans_data|safe }};
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: loansData.labels,
+        datasets: [{
+          data: loansData.data,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 205, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(153, 102, 255, 0.2)'
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 205, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

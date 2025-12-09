@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta charset="UTF-8" />
+  <title>ANU Library – E-Resources & Databases</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Optional icon font -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <style>
+    /* ==== Base + Fonts ==== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      min-height: 100vh;
+      color: #111827;
+      overflow-x: hidden;
+    }
+
+    /* ==== GitHub-like Background ==== */
+    .page-wrap {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 64px 16px;
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
+      color: #f9fafb;
+    }
+
+    /* floating gradient blobs */
+    .bg-blob {
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(40px);
+      opacity: 0.7;
+      mix-blend-mode: lighten;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-blob.blob1 {
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, #f97316, #ec4899);
+      top: -80px;
+      left: -120px;
+      animation: float1 22s ease-in-out infinite alternate;
+    }
+    .bg-blob.blob2 {
+      width: 460px;
+      height: 460px;
+      background: radial-gradient(circle, #22c55e, #0ea5e9);
+      bottom: -160px;
+      right: -120px;
+      animation: float2 26s ease-in-out infinite alternate;
+    }
+    .bg-blob.blob3 {
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, #a855f7, #22d3ee);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.4;
+      animation: float3 32s ease-in-out infinite alternate;
+    }
+
+    @keyframes float1 {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(80px, 40px,0); }
+    }
+    @keyframes float2 {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(-60px,-40px,0); }
+    }
+    @keyframes float3 {
+      0% { transform: translate3d(-50%,-50%,0) scale(1); }
+      100% { transform: translate3d(-48%,-46%,0) scale(1.08); }
+    }
+
+    /* ==== Main Content Card (glass effect) ==== */
+    .content-card {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 1200px;
+      background: rgba(249, 250, 251, 0.97);
+      border-radius: 24px;
+      padding: 32px 28px 40px;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      backdrop-filter: blur(18px);
+      color: #111827;
+    }
+
+    .content-header {
+      margin-bottom: 24px;
+    }
+    .content-header h1 {
+      font-size: 2rem;
+      letter-spacing: 0.02em;
+    }
+    .content-header h1 span {
+      color: #b45309; /* gold-ish » */
+    }
+    .content-header p {
+      margin-top: 4px;
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+
+    /* ==== A–Z Button Row ==== */
+    .alpha-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .alpha-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .alpha-btn:hover {
+      background: #111827;
+      color: #f9fafb;
+      border-color: #111827;
+      transform: translateY(-1px);
+    }
+    .alpha-btn.active {
+      background: #2563eb;
+      color: #f9fafb;
+      border-color: #2563eb;
+      box-shadow: 0 6px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .alpha-status {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    /* ==== Cards ==== */
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .resource-card {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.15);
+      border: 1px solid #e5e7eb;
+      padding: 20px 20px 22px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: transform 0.16s ease, box-shadow 0.16s ease,
+                  border-color 0.16s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .resource-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(59,130,246,0.09), rgba(16,185,129,0.06));
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .resource-card-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .resource-icon {
+      flex: 0 0 46px;
+      height: 46px;
+      border-radius: 999px;
+      background: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
+      font-size: 1.2rem;
+    }
+
+    .resource-text h3 {
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+    .resource-text h3 span {
+      color: #2563eb;
+      margin-left: 2px;
+    }
+    .resource-text p {
+      font-size: 0.9rem;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    .resource-card:hover {
+      transform: translateY(-4px);
+      border-color: #c4b5fd;
+      box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
+    }
+    .resource-card:hover::before {
+      opacity: 1;
+    }
+
+    @media (max-width: 960px) {
+      .resources-grid {
+        grid-template-columns: 1fr;
+      }
+      .page-wrap {
+        padding: 32px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- animated gradient blobs -->
+  <div class="bg-blob blob1"></div>
+  <div class="bg-blob blob2"></div>
+  <div class="bg-blob blob3"></div>
+
+  <div class="page-wrap">
+    <main class="content-card">
+      <!-- Header -->
+      <header class="content-header">
+        <h1>E-Resources &amp; Databases <span>&raquo;</span></h1>
+        <p>
+          Explore subscribed databases, online journals, and digital resources
+          available through Acharya Nagarjuna University Library.
+        </p>
+      </header>
+
+      <!-- Alphabet filter -->
+      <div class="alpha-row" id="alphaRow">
+        <!-- # + A–Z buttons -->
+        <button class="alpha-btn active" data-letter="#">#</button>
+        <!-- Letters generated by JS as well; keeping first one here in case JS disabled -->
+      </div>
+      <div class="alpha-status" id="alphaStatus">
+        Showing resources for: <strong># / All</strong>
+      </div>
+
+      <!-- Cards -->
+      <section class="resources-grid">
+        <!-- Card 1 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon">
+              <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Opening Hours <span>&raquo;</span></h3>
+              <p>
+                Find out the opening hours of each Acharya Nagarjuna
+                University Library branch and plan your study sessions.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon" style="background:#ecfdf5;color:#16a34a;">
+              <i class="fa-regular fa-comments"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Ask a Librarian <span>&raquo;</span></h3>
+              <p>
+                Ask questions, get research help, and consult reference
+                librarians for databases, citations, and literature search.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon" style="background:#fef3c7;color:#d97706;">
+              <i class="fa-solid fa-door-open"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Book a Study Room <span>&raquo;</span></h3>
+              <p>
+                Reserve quiet study spaces and group discussion rooms at the
+                ANU Central Library and other branches on campus.
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <!-- Simple JS for A–Z buttons -->
+  <script>
+    const alphaRow = document.getElementById("alphaRow");
+    const status = document.getElementById("alphaStatus");
+
+    // Add A–Z buttons dynamically (we already placed #)
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    letters.forEach(letter => {
+      const btn = document.createElement("button");
+      btn.className = "alpha-btn";
+      btn.textContent = letter;
+      btn.dataset.letter = letter;
+      alphaRow.appendChild(btn);
+    });
+
+    alphaRow.addEventListener("click", (e) => {
+      const btn = e.target.closest(".alpha-btn");
+      if (!btn) return;
+
+      // toggle active state
+      document
+        .querySelectorAll(".alpha-btn")
+        .forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const letter = btn.dataset.letter;
+      status.innerHTML =
+        `Showing resources for: <strong>${letter === "#" ? "# / All" : letter}</strong>`;
+      // Here you can plug real filtering logic later.
+    });
+  </script>
+</body>
+</html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ANU Library – E-Resources & Databases</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Optional icon font -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <style>
+    /* ==== Base + Fonts ==== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      min-height: 100vh;
+      color: #111827;
+      overflow-x: hidden;
+    }
+
+    /* ==== GitHub-like Background ==== */
+    .page-wrap {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 64px 16px;
+      background: radial-gradient(circle at top left, #1f2937 0, #020617 55%);
+      color: #f9fafb;
+    }
+
+    /* floating gradient blobs */
+    .bg-blob {
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(40px);
+      opacity: 0.7;
+      mix-blend-mode: lighten;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-blob.blob1 {
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, #f97316, #ec4899);
+      top: -80px;
+      left: -120px;
+      animation: float1 22s ease-in-out infinite alternate;
+    }
+    .bg-blob.blob2 {
+      width: 460px;
+      height: 460px;
+      background: radial-gradient(circle, #22c55e, #0ea5e9);
+      bottom: -160px;
+      right: -120px;
+      animation: float2 26s ease-in-out infinite alternate;
+    }
+    .bg-blob.blob3 {
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, #a855f7, #22d3ee);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.4;
+      animation: float3 32s ease-in-out infinite alternate;
+    }
+
+    @keyframes float1 {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(80px, 40px,0); }
+    }
+    @keyframes float2 {
+      0% { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(-60px,-40px,0); }
+    }
+    @keyframes float3 {
+      0% { transform: translate3d(-50%,-50%,0) scale(1); }
+      100% { transform: translate3d(-48%,-46%,0) scale(1.08); }
+    }
+
+    /* ==== Main Content Card (glass effect) ==== */
+    .content-card {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 1200px;
+      background: rgba(249, 250, 251, 0.97);
+      border-radius: 24px;
+      padding: 32px 28px 40px;
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      backdrop-filter: blur(18px);
+      color: #111827;
+    }
+
+    .content-header {
+      margin-bottom: 24px;
+    }
+    .content-header h1 {
+      font-size: 2rem;
+      letter-spacing: 0.02em;
+    }
+    .content-header h1 span {
+      color: #b45309; /* gold-ish » */
+    }
+    .content-header p {
+      margin-top: 4px;
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+
+    /* ==== A–Z Button Row ==== */
+    .alpha-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .alpha-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #111827;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .alpha-btn:hover {
+      background: #111827;
+      color: #f9fafb;
+      border-color: #111827;
+      transform: translateY(-1px);
+    }
+    .alpha-btn.active {
+      background: #2563eb;
+      color: #f9fafb;
+      border-color: #2563eb;
+      box-shadow: 0 6px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .alpha-status {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    /* ==== Cards ==== */
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .resource-card {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.15);
+      border: 1px solid #e5e7eb;
+      padding: 20px 20px 22px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: transform 0.16s ease, box-shadow 0.16s ease,
+                  border-color 0.16s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .resource-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(59,130,246,0.09), rgba(16,185,129,0.06));
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .resource-card-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .resource-icon {
+      flex: 0 0 46px;
+      height: 46px;
+      border-radius: 999px;
+      background: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
+      font-size: 1.2rem;
+    }
+
+    .resource-text h3 {
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+    .resource-text h3 span {
+      color: #2563eb;
+      margin-left: 2px;
+    }
+    .resource-text p {
+      font-size: 0.9rem;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    .resource-card:hover {
+      transform: translateY(-4px);
+      border-color: #c4b5fd;
+      box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
+    }
+    .resource-card:hover::before {
+      opacity: 1;
+    }
+
+    @media (max-width: 960px) {
+      .resources-grid {
+        grid-template-columns: 1fr;
+      }
+      .page-wrap {
+        padding: 32px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- animated gradient blobs -->
+  <div class="bg-blob blob1"></div>
+  <div class="bg-blob blob2"></div>
+  <div class="bg-blob blob3"></div>
+
+  <div class="page-wrap">
+    <main class="content-card">
+      <!-- Header -->
+      <header class="content-header">
+        <h1>E-Resources &amp; Databases <span>&raquo;</span></h1>
+        <p>
+          Explore subscribed databases, online journals, and digital resources
+          available through Acharya Nagarjuna University Library.
+        </p>
+      </header>
+
+      <!-- Alphabet filter -->
+      <div class="alpha-row" id="alphaRow">
+        <!-- # + A–Z buttons -->
+        <button class="alpha-btn active" data-letter="#">#</button>
+        <!-- Letters generated by JS as well; keeping first one here in case JS disabled -->
+      </div>
+      <div class="alpha-status" id="alphaStatus">
+        Showing resources for: <strong># / All</strong>
+      </div>
+
+      <!-- Cards -->
+      <section class="resources-grid">
+        <!-- Card 1 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon">
+              <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Opening Hours <span>&raquo;</span></h3>
+              <p>
+                Find out the opening hours of each Acharya Nagarjuna
+                University Library branch and plan your study sessions.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon" style="background:#ecfdf5;color:#16a34a;">
+              <i class="fa-regular fa-comments"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Ask a Librarian <span>&raquo;</span></h3>
+              <p>
+                Ask questions, get research help, and consult reference
+                librarians for databases, citations, and literature search.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="resource-card">
+          <div class="resource-card-inner">
+            <div class="resource-icon" style="background:#fef3c7;color:#d97706;">
+              <i class="fa-solid fa-door-open"></i>
+            </div>
+            <div class="resource-text">
+              <h3>Book a Study Room <span>&raquo;</span></h3>
+              <p>
+                Reserve quiet study spaces and group discussion rooms at the
+                ANU Central Library and other branches on campus.
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <!-- Simple JS for A–Z buttons -->
+  <script>
+    const alphaRow = document.getElementById("alphaRow");
+    const status = document.getElementById("alphaStatus");
+
+    // Add A–Z buttons dynamically (we already placed #)
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    letters.forEach(letter => {
+      const btn = document.createElement("button");
+      btn.className = "alpha-btn";
+      btn.textContent = letter;
+      btn.dataset.letter = letter;
+      alphaRow.appendChild(btn);
+    });
+
+    alphaRow.addEventListener("click", (e) => {
+      const btn = e.target.closest(".alpha-btn");
+      if (!btn) return;
+
+      // toggle active state
+      document
+        .querySelectorAll(".alpha-btn")
+        .forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const letter = btn.dataset.letter;
+      status.innerHTML =
+        `Showing resources for: <strong>${letter === "#" ? "# / All" : letter}</strong>`;
+      // Here you can plug real filtering logic later.
+    });
+  </script>
+</body>
+</html>
+<html lang="en">

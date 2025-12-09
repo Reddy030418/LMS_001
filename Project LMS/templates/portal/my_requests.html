@@ -1,0 +1,48 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}My Requests - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>My Book Requests</h2>
+    
+    {% if requests %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Requested On</th>
+                        <th>Processed On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr>
+                        <td><a href="{% url 'book_detail' request.book.id %}">{{ request.book.title }}</a></td>
+                        <td>{{ request.book.author }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if request.status == 'PENDING' %}bg-warning
+                                {% elif request.status == 'APPROVED' %}bg-success
+                                {% else %}bg-danger{% endif %}">
+                                {{ request.status }}
+                            </span>
+                        </td>
+                        <td>{{ request.created_at|date:"M d, Y" }}</td>
+                        <td>{{ request.processed_at|date:"M d, Y" if request.processed_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <h5>No requests found</h5>
+            <p>You haven't made any book requests yet. <a href="{% url 'book_list' %}">Browse books</a> to make a request.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

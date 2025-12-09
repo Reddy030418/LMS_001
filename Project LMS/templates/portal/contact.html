@@ -1,0 +1,87 @@
+{% extends 'portal/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+  <h1 class="mb-3">{{ title }}</h1>
+  <p class="text-muted">Get in touch with us for any queries or assistance.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Library Contact Information</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="fa-solid fa-map-marker-alt text-primary me-2"></i>Address</h6>
+            <p class="text-muted">{{ contact_details.address }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fa-solid fa-phone text-primary me-2"></i>Phone</h6>
+            <p class="text-muted">{{ contact_details.phone }}</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="fa-solid fa-envelope text-primary me-2"></i>Email</h6>
+            <p class="text-muted">{{ contact_details.email }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fa-solid fa-clock text-primary me-2"></i>Hours</h6>
+            <pre class="text-muted mb-0">{{ contact_details.hours }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="{% url 'home' %}" class="text-decoration-none"><i class="fa-solid fa-house me-2"></i>Home</a></li>
+          <li><a href="{% url 'book_list' %}" class="text-decoration-none"><i class="fa-solid fa-book me-2"></i>Books</a></li>
+          <li><a href="{% url 'my_books' %}" class="text-decoration-none"><i class="fa-solid fa-user me-2"></i>My Account</a></li>
+          {% if user.is_staff %}
+            <li><a href="{% url 'admin_dashboard' %}" class="text-decoration-none"><i class="fa-solid fa-chart-bar me-2"></i>Dashboard</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Send a Message</h5>
+        <form method="post" action="">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="subject" name="subject" required>
+          </div>
+          <div class="mb-3">
+            <label for="message" class="form-label">Message</label>
+            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
