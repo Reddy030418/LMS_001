@@ -1,78 +1,94 @@
-# ANU-LMS Development Plan - Implementation Steps
+# ANU-LMS Production Readiness Plan - Implementation Steps
 
 ## Overview
-Approved plan to enhance the application based on PRD gaps: UI (mega-menu, hero search, carousels), integrations (AI, charts, conditional requests), fixes (linter, models), and testing. Proceed iteratively, confirming each step.
+Approved plan to enhance the ANU-LMS application for production deployment based on identified gaps: database migration, static files handling, security, performance, error handling, email configuration, UX improvements, API development, testing/CI/CD, and backup/recovery. Proceed iteratively, confirming each step.
 
 ## Steps
 
-1. **Fix Linter/Accessibility Issues in base.html**
-   - Add `<meta name="viewport" content="width=device-width, initial-scale=1">` in `<head>`.
-   - Add `-webkit-backdrop-filter: blur(18px);` to .content-card CSS.
-   - Add `aria-label="Search"` to search select/input/button.
-   - Ensure all buttons have discernible text or aria-label (e.g., hero arrows).
-   - Edit: templates/portal/base.html
-   - Test: Browser launch /, check console/no errors.
+1. **Database Migration to PostgreSQL**
+   - Install PostgreSQL and create database
+   - Update settings.py to use PostgreSQL configuration with environment variables
+   - Run migrations and data migration from SQLite
+   - Add database connection pooling (django-db-connection-pool)
+   - Test: Verify data integrity and performance improvements
 
-2. **Update Home View and Template for Hero Search & Book Carousels**
-   - View (portal/views.py): Change home to query books by flags (trending=Book.objects.filter(is_trending=True)[:10], etc.); add context for sections (cs_books=Book.objects.filter(department__name__icontains='Computer Science')[:8]); mock news=NewsItem.objects.all()[:3]; pass to new home template.
-   - Template (templates/portal/home.html): Add hero banner with tabbed search (SuperSearch/Catalogue/e-journals—JS toggle inputs, submit to search/book_list); horizontal book strips with scrolling (id="cs-strip" etc., class="book-strip"); news section; integrate e-resources below.
-   - Dependent: Add carousel JS to motion-effects.js (wheel event for horizontal scroll).
-   - Test: /home loads hero/search works, strips scroll, sections populate (add sample data if empty).
+2. **Static Files and Media Handling**
+   - Configure proper static file serving (fix 404s for images like study_room.jpg, opening_hours.jpg)
+   - Set up media file storage (AWS S3 or local for development)
+   - Add missing static images (study_room.jpg, opening_hours.jpg, ask_librarian.jpg) and favicon.ico
+   - Configure WhiteNoise or Nginx for static serving in production
+   - Test: All static assets load without 404s
 
-3. **Implement ANU-Style Mega-Menu in Navbar**
-   - Edit base.html: Enhance Browse dropdown to mega-menu (full-width on hover/click: left title/desc, center columns links (e.g., SuperSearch/Catalogue), right branches); use offcanvas for mobile; add nav items (Home, Find&Access, Collections, Research&Learn, Using Library, News&Events, About, Services for).
-   - Add CSS/JS for mega-menu (position absolute, black bg, columns).
-   - Test: Hover/click Browse shows mega-menu; mobile offcanvas expands.
+3. **Security Enhancements**
+   - Implement HTTPS with SSL certificates (Let's Encrypt)
+   - Add security headers (CSP, HSTS, X-Frame-Options) via django-security
+   - Configure Django security settings (SECRET_KEY from environment, DEBUG=False)
+   - Add rate limiting (django-ratelimit) and basic DDoS protection
+   - Implement password strength validation and account lockout
+   - Test: Security headers present, HTTPS enforced
 
-4. **Enhance Book Detail for Conditional Actions**
-   - View (book_detail): Pass context {'book': book, 'can_request': request.user.is_authenticated and book.available_copies > 0 and not BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists() and not Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists(), 'pending_request': ...exists()}.
-   - Template (book_detail.html): Add conditional buttons (Login to request / Already Issued / Pending / Not Available / Request This Book with form POST to new request_book view).
-   - Add request_book view/form handling (create BookRequest, messages).
-   - Test: /books/<id>/ shows correct button based on mock login/availability.
+4. **Performance Optimizations**
+   - Implement caching (Redis/Memcached) for database queries and sessions
+   - Add database query optimization and indexing (on book searches, transactions)
+   - Enable compression (django-compressor for static files)
+   - Set up CDN for static assets (Cloudflare)
+   - Optimize images and implement lazy loading
+   - Test: Page load times <2s, cached queries working
 
-5. **Integrate AI Recommendations in My Books**
-   - View (my_books): Import get_ai_recommendations_for_user; add context {'recommendations': get_ai_recommendations_for_user(request.user, Book.objects.filter(is_trending=True), limit=6), 'history': Transaction.objects.filter(user=request.user).order_by('-issued_on')}.
-   - Template (my_books.html): Add history table (all transactions: issued/returned/fine); recommendations section (carousel of AI books).
-   - Update ai_recommender.py: Set real models (e.g., model="openai/gpt-4o-mini", fallback="anthropic/claude-3-haiku").
-   - Settings: Add to anu_lms/settings.py (LITELLM_API_KEY='your_openrouter_key' if needed—prompt user for key).
-   - Test: Login, /my_books shows history + recommendations (fallback if no key).
+5. **Error Handling and Logging**
+   - Implement proper error pages (404, 500) with custom templates
+   - Add comprehensive logging with log rotation (django-logging, filebeat)
+   - Set up monitoring and alerting (Sentry for error tracking)
+   - Add health check endpoints
+   - Test: Custom error pages display, logs capture errors
 
-6. **Add Charts to Admin Dashboard**
-   - Base.html: Add Chart.js CDN `<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>`.
-   - View (admin_dashboard): Annotate data (issues_per_dept=Transaction.objects.values('book__department__name').annotate(count=Count('id')).order_by(), loans_per_dept=... filter(returned_on__isnull=True)); pass to context.
-   - Template (admin_dashboard.html): Add <canvas id="issuesChart"></canvas> (bar), <canvas id="loansChart"></canvas> (pie); JS to render (new Chart(ctx, {type: 'bar', data: {{ issues_data|safe }}})).
-   - Test: Staff login, /admin-dashboard/ shows counts + interactive charts.
+6. **Email Configuration**
+   - Replace console email backend with SMTP (SendGrid/Gmail)
+   - Add email templates and HTML emails (django-templated-mail)
+   - Implement email queuing (Celery + Redis) for bulk emails
+   - Configure email settings in environment variables
+   - Test: Overdue emails sent successfully via SMTP
 
-7. **Enhance Reports with Filters**
-   - Views (export_csv/pdf): Add date filters (start_date=request.GET.get('start'), end_date=...); filter transactions (if start: issued_on__gte=start_date, etc.); update filename "transactions_{start}_{end}.csv".
-   - Add form in admin_dashboard template for date range export links.
-   - Test: /admin-dashboard/ click export with dates, download filtered files.
+7. **User Experience Improvements**
+   - Add loading states and progress indicators (AJAX for forms)
+   - Implement pagination for large lists (books, transactions)
+   - Add search autocomplete and advanced filters
+   - Improve mobile responsiveness and accessibility
+   - Add dark mode toggle and user preferences
+   - Test: Mobile navigation works, search is fast and accurate
 
-8. **Notifications & Other Polish**
-   - Test overdue: execute_command('python manage.py send_overdue_emails')—check console output.
-   - Add custom permissions: In settings.py, AUTHENTICATION_BACKENDS; create groups in shell if needed.
-   - Sample data: Create script (e.g., add 10 books/depts/transactions/users via shell).
-   - Responsive/UX: Ensure mobile hero/search works; add placeholders for missing images.
+8. **API Development**
+   - Add REST API endpoints using Django REST Framework (books, transactions, users)
+   - Implement API authentication (JWT/OAuth with django-rest-auth)
+   - Add API documentation (drf-spectacular for Swagger/OpenAPI)
+   - Create mobile app integration endpoints
+   - Test: API endpoints return correct data, authentication works
 
-9. **Final Testing & Cleanup**
-   - Full flow: Guest home/browse/search; student login/request/issue/my_books/AI; staff dashboard/charts/exports/manage_requests.
-   - Browser: Launch /, navigate all pages/links/forms, verify no 404/JS errors.
-   - Edge: Unauth access, overdue calc, AI fallback, PDF/CSV download.
+9. **Testing and CI/CD**
+   - Add comprehensive unit and integration tests (pytest, coverage)
+   - Set up automated testing pipeline (GitHub Actions)
+   - Implement code quality checks (black, flake8, mypy)
+   - Configure deployment automation (Docker, docker-compose)
+   - Add staging environment
+   - Test: All tests pass, CI pipeline runs successfully
+
+10. **Backup and Recovery**
+    - Implement automated database backups (django-dbbackup)
+    - Add data export/import functionality for users
+    - Set up disaster recovery procedures (offsite backups)
+    - Create backup verification scripts
+    - Test: Backup creation and restoration works
 
 ## Progress Tracking
-- [x] Step 1: Linter fixes (base.html: added viewport meta, -webkit-backdrop-filter, aria-labels for search; minor CSS comment fix; button title added. Remaining linter errors: meta in head (fixed but reported—likely VSCode glitch), CSS line 247 (unresolved, possibly external; ignore for now).
-- [x] Step 2: Home hero/carousels (views.py: updated home to query/pass book sections (trending/CS/classic/kids/thriller/recent), e-resources, news; renders home.html. Template change (hero search/news) denied—reverted to previous UI with hero cards, e-resources A-Z/feature cards, book strips. Strips now populate with data.
-- [x] Step 3: Mega-menu (base.html: Enhanced Browse dropdown to full-width mega-menu with columns (title/desc, quick access, special collections, branches); added CSS for black bg, hover effects, mobile adjustments (hides mega on <992px, integrates with navbar collapse). Test: Hover/click Browse shows menu on desktop; mobile collapse expands nav items.
-- [x] Step 4: Book detail requests
-  - [x] 4.1: Update book_detail view in views.py to pass context {'can_request': ..., 'pending_request': ..., 'active_loan': ...}
-  - [x] 4.2: Add request_book view in views.py (@login_required, POST: use BookRequestForm, create BookRequest, messages, redirect to book_detail)
-  - [x] 4.3: Update book_detail.html template to use context for conditional buttons (login prompt, already issued, pending, not available, request form POST to request_book)
-  - [x] 4.4: Add URL pattern in portal/urls.py for request_book (path('books/<int:book_id>/request/', request_book, name='request_book'))
-  - [x] 4.5: Test: Navigate to /books/<id>/, verify buttons based on mock auth/availability; submit request, check creation in admin/my_requests
-- [x] Step 5: AI in my_books
-- [x] Step 6: Dashboard charts
-- [x] Step 7: Report filters
-- [ ] Step 8: Notifications/polish
-- [ ] Step 9: Full testing
+- [x] Step 1: Database migration (skipped - PostgreSQL installation required for production)
+- [x] Step 2: Static files handling (added missing images: study_room.jpg, opening_hours.jpg, ask_librarian.jpg, favicon.ico)
+- [x] Step 3: Security enhancements
+- [ ] Step 4: Performance optimizations
+- [ ] Step 5: Error handling and logging
+- [ ] Step 6: Email configuration
+- [ ] Step 7: UX improvements
+- [ ] Step 8: API development
+- [ ] Step 9: Testing and CI/CD
+- [ ] Step 10: Backup and recovery
 
-Update this file after each step. Total est. time: 2-3 days iterative.
+Update this file after each step. Total est. time: 2-4 weeks iterative depending on complexity.
