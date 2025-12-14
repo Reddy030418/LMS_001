@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ANU Library{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
 
   <!-- Bootstrap 5 -->
   <link
@@ -408,43 +409,11 @@
       color: #fff;
     }
 
-    /* Mobile adjustments */
-    @media (max-width: 992px) {
-      .mega-menu {
-        position: static;
-        width: 100%;
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-        box-shadow: none;
-        background: #111;
-      }
+  </style>
 
-      .mega-dropdown .dropdown-menu {
-        display: none; /* Hide on mobile, use offcanvas if needed */
-      }
-    }
+</head>
+=======
 
-    /* Navbar Stacking */
-    .navbar-collapse.flex-column {
-      flex-direction: column !important;
-    }
-
-    .navbar-nav.w-100.justify-content-center {
-      justify-content: center !important;
-    }
-
-    .d-flex.justify-content-between.align-items-center.w-100 {
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    /* Ensure navbar items stay in one line for main nav */
-    .navbar-nav {
-      flex-wrap: nowrap;
-    }
-
-    {% block extra_css %}{% endblock %}
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -465,6 +434,8 @@
         type="button"
         data-bs-toggle="collapse"
         data-bs-target="#mainNavbar"
+        aria-label="Toggle navigation"
+        title="Toggle navigation menu"
       >
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -499,37 +470,37 @@
                 <h6 class="mega-title">Quick Access</h6>
                 <ul class="mega-links">
                   <li><a class="dropdown-item" href="{% url 'book_list' %}">All Books</a></li>
-                  <li><a class="dropdown-item" href="#">By Subject</a></li>
-                  <li><a class="dropdown-item" href="#">Trending Now</a></li>
-                  <li><a class="dropdown-item" href="#">New Arrivals</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?type=subject">By Subject</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}">Trending Now</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?order=new">New Arrivals</a></li>
                 </ul>
               </div>
               <div class="mega-column">
                 <h6 class="mega-title">Special Collections</h6>
                 <ul class="mega-links">
-                  <li><a class="dropdown-item" href="#">Rare Books</a></li>
-                  <li><a class="dropdown-item" href="#">Theses & Dissertations</a></li>
-                  <li><a class="dropdown-item" href="#">ANU Archives</a></li>
-                  <li><a class="dropdown-item" href="#">Digital Exhibits</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Rare">Rare Books</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Thesis">Theses & Dissertations</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Archive">ANU Archives</a></li>
+                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Digital">Digital Exhibits</a></li>
                 </ul>
               </div>
               <!-- Right Column: Branches/Services -->
               <div class="mega-column">
                 <h6 class="mega-title">Library Branches</h6>
                 <ul class="mega-links">
-                  <li><a class="dropdown-item" href="#">Central Library</a></li>
-                  <li><a class="dropdown-item" href="#">Science Branch</a></li>
-                  <li><a class="dropdown-item" href="#">Arts Branch</a></li>
-                  <li><a class="dropdown-item" href="#">Contact a Branch</a></li>
+                  <li><a class="dropdown-item" href="{% url 'opening_hours' %}">Central Library</a></li>
+                  <li><a class="dropdown-item" href="{% url 'opening_hours' %}">Science Branch</a></li>
+                  <li><a class="dropdown-item" href="{% url 'opening_hours' %}">Arts Branch</a></li>
+                  <li><a class="dropdown-item" href="{% url 'contact' %}">Contact a Branch</a></li>
                 </ul>
               </div>
             </div>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Research & Learn</a>
+            <a class="nav-link" href="{% url 'advanced_search' %}">Research & Learn</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">News & Events</a>
+            <a class="nav-link" href="{% url 'news' %}">News & Events</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'contact' %}">Services for...</a>
@@ -556,8 +527,8 @@
               name="q"
               aria-label="Search query"
             />
-            <button class="btn btn-outline-secondary btn-sm search-btn" type="submit" aria-label="Search" title="Search">
-              <i class="fa-solid fa-magnifying-glass"></i>
+            <button class="btn btn-outline-secondary btn-sm search-btn" type="submit" aria-label="Search">
+              <i class="fa-solid fa-magnifying-glass"></i> Search
             </button>
           </form>
 
@@ -619,10 +590,10 @@
         © {{ now|date:"Y" }} Acharya Nagarjuna University Library. All rights reserved.
       </div>
       <div class="d-flex gap-2">
-        <a href="#" class="text-light"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" class="text-light"><i class="fa-brands fa-youtube"></i></a>
-        <a href="#" class="text-light"><i class="fa-brands fa-x-twitter"></i></a>
-        <a href="#" class="text-light"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="text-light" title="Facebook" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" class="text-light" title="YouTube" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a href="#" class="text-light" title="X (Twitter)" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="#" class="text-light" title="Instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
       </div>
     </div>
   </footer>

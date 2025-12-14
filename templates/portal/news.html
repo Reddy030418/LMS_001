@@ -1,0 +1,25 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}News & Events - ANU Library{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2 class="mb-4">News & Events</h2>
+    {% for item in news_items %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">{{ item.title }}</h5>
+        <p class="card-text">{{ item.content|truncatewords:50 }}</p>
+        <p class="small text-muted">{{ item.created_at|date:"M d, Y" }}</p>
+        {% if item.content|length > 200 %}
+        <a href="#" class="text-decoration-none">Read more &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <p>No news items available at the moment.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

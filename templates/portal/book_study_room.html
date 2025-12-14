@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <main class="content-card">
+    <header class="content-header">
+      <h1>{{ title }} <span>&raquo;</span></h1>
+      <p>Reserve study spaces and reading rooms at ANU Central Library.</p>
+    </header>
+
+    <section class="booking-section">
+      <div class="booking-info">
+        <h3>Available Study Rooms</h3>
+        <ul>
+          <li><strong>Individual Study Pods:</strong> Quiet spaces for 1 person, equipped with power outlets and lighting.</li>
+          <li><strong>Group Study Rooms:</strong> For 2-6 people, with whiteboards and projectors.</li>
+          <li><strong>Reading Rooms:</strong> Larger spaces for quiet reading, up to 20 people.</li>
+        </ul>
+        <p><strong>Booking Policy:</strong> Rooms can be booked up to 7 days in advance. Maximum 2 hours per session. Available during library hours.</p>
+      </div>
+
+      <form method="post" class="booking-form">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="room_type">Room Type:</label>
+          <select id="room_type" name="room_type" required>
+            <option value="">Select a room type</option>
+            <option value="individual">Individual Study Pod</option>
+            <option value="group">Group Study Room</option>
+            <option value="reading">Reading Room</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="date">Preferred Date:</label>
+          <input type="date" id="date" name="date" required min="{{ today }}">
+        </div>
+        <div class="form-group">
+          <label for="time">Preferred Time:</label>
+          <select id="time" name="time" required>
+            <option value="">Select a time slot</option>
+            <option value="09:00">9:00 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="12:00">12:00 PM</option>
+            <option value="13:00">1:00 PM</option>
+            <option value="14:00">2:00 PM</option>
+            <option value="15:00">3:00 PM</option>
+            <option value="16:00">4:00 PM</option>
+            <option value="17:00">5:00 PM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="duration">Duration:</label>
+          <select id="duration" name="duration" required>
+            <option value="">Select duration</option>
+            <option value="1">1 Hour</option>
+            <option value="2">2 Hours</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Submit Booking Request</button>
+      </form>
+
+      <div class="booking-note">
+        <p><strong>Note:</strong> All bookings are subject to availability and approval. You will receive a confirmation email upon approval.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  // Set min date to today
+  document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').setAttribute('min', today);
+  });
+</script>
+
+<style>
+  .booking-section {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .booking-info {
+    background: #ecfdf5;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border-left: 4px solid #16a34a;
+  }
+  .booking-info h3 {
+    margin-bottom: 16px;
+    color: #065f46;
+  }
+  .booking-info ul {
+    list-style: disc;
+    padding-left: 20px;
+    margin-bottom: 16px;
+  }
+  .booking-info li {
+    color: #065f46;
+    margin-bottom: 8px;
+  }
+  .booking-info p {
+    margin: 0;
+    color: #065f46;
+  }
+  .booking-form {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.15);
+    margin-bottom: 24px;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  .btn-primary {
+    background: #16a34a;
+    color: #ffffff;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover {
+    background: #15803d;
+  }
+  .booking-note {
+    background: #fef3c7;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+  }
+  .booking-note p {
+    margin: 0;
+    color: #92400e;
+  }
+</style>
+{% endblock %}

@@ -22,9 +22,9 @@
     <!-- Alphabet filter -->
     <div class="alpha-row" id="alphaRow">
       <!-- # + A–Z buttons -->
-      <a href="#" class="alpha-btn active" data-letter="#">#</a>
+      <a href="/eresources/" class="alpha-btn active" data-letter="#">#</a>
       {% for l in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-        <a href="#" class="alpha-btn" data-letter="{{ l }}">{{ l }}</a>
+        <a href="/eresources/{{ l }}/" class="alpha-btn" data-letter="{{ l }}">{{ l }}</a>
       {% endfor %}
     </div>
     <div class="alpha-status" id="alphaStatus">
@@ -77,6 +77,42 @@
           </div>
         </div>
       </article>
+    </section>
+
+    <!-- Library Services Section -->
+    <section class="resources-grid" style="margin-top: 40px;">
+      <!-- Opening Hours Card -->
+      <a href="/opening-hours/" class="resource-card" style="text-decoration: none; color: inherit; cursor: pointer; height: 100%; display: block;">
+        <div class="resource-icon" style="background:#dbeafe;color:#1d4ed8;">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="resource-text">
+          <h3>Opening Hours <span>&raquo;</span></h3>
+          <p>Find out the opening hours of each Acharya Nagarjuna University Library branch.</p>
+        </div>
+      </a>
+
+      <!-- Ask a Librarian Card -->
+      <a href="/ask-librarian/" class="resource-card" style="text-decoration: none; color: inherit; cursor: pointer; height: 100%; display: block;">
+        <div class="resource-icon" style="background:#fef3c7;color:#d97706;">
+          <i class="fa-solid fa-question-circle"></i>
+        </div>
+        <div class="resource-text">
+          <h3>Ask a Librarian <span>&raquo;</span></h3>
+          <p>Ask questions, get research help, and consult reference librarians.</p>
+        </div>
+      </a>
+
+      <!-- Book a Study Room Card -->
+      <a href="/book-study-room/" class="resource-card" style="text-decoration: none; color: inherit; cursor: pointer; height: 100%; display: block;">
+        <div class="resource-icon" style="background:#ecfdf5;color:#16a34a;">
+          <i class="fa-solid fa-chair"></i>
+        </div>
+        <div class="resource-text">
+          <h3>Book a Study Room <span>&raquo;</span></h3>
+          <p>Reserve study spaces and reading rooms at ANU Central Library.</p>
+        </div>
+      </a>
     </section>
   </main>
 </div>
@@ -235,6 +271,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
+    align-items: stretch;
   }
 
   .resource-card {
@@ -336,4 +373,5 @@
     // Here you can plug real filtering logic later.
   });
 </script>
+
 {% endblock %}

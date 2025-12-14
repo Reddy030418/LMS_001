@@ -17,39 +17,45 @@
       </div>
 
       <div class="col-lg-4 col-md-4">
-        <div class="hero-card">
-          <div class="hero-icon">
-            <i class="fa-solid fa-book-open fa-2x"></i>
+        <a href="{% url 'eresources_list' '0' %}" class="text-decoration-none">
+          <div class="hero-card">
+            <div class="hero-icon">
+              <i class="fa-solid fa-book-open fa-2x"></i>
+            </div>
+            <div class="hero-title">Read Free Library Books Online</div>
+            <div class="hero-text">
+              Access thousands of ANU digital books anytime, from campus or home.
+            </div>
           </div>
-          <div class="hero-title">Read Free Library Books Online</div>
-          <div class="hero-text">
-            Access thousands of ANU digital books anytime, from campus or home.
-          </div>
-        </div>
+        </a>
       </div>
 
       <div class="col-lg-4 col-md-4">
-        <div class="hero-card">
-          <div class="hero-icon">
-            <i class="fa-solid fa-bullseye fa-2x"></i>
+        <a href="{% url 'my_books' %}" class="text-decoration-none">
+          <div class="hero-card">
+            <div class="hero-icon">
+              <i class="fa-solid fa-bullseye fa-2x"></i>
+            </div>
+            <div class="hero-title">Set a Yearly Reading Goal</div>
+            <div class="hero-text">
+              Let our AI assistant suggest books and track your reading.
+            </div>
           </div>
-          <div class="hero-title">Set a Yearly Reading Goal</div>
-          <div class="hero-text">
-            Let our AI assistant suggest books and track your reading.
-          </div>
-        </div>
+        </a>
       </div>
 
       <div class="col-lg-4 col-md-4">
-        <div class="hero-card">
-          <div class="hero-icon">
-            <i class="fa-solid fa-heart fa-2x"></i>
+        <a href="{% url 'my_books' %}" class="text-decoration-none">
+          <div class="hero-card">
+            <div class="hero-icon">
+              <i class="fa-solid fa-heart fa-2x"></i>
+            </div>
+            <div class="hero-title">Keep Track of Your Favourite Books</div>
+            <div class="hero-text">
+              Organise books into lists like “Exam Prep”, “Research”, and “Fun Reads”.
+            </div>
           </div>
-          <div class="hero-title">Keep Track of Your Favourite Books</div>
-          <div class="hero-text">
-            Organise books into lists like “Exam Prep”, “Research”, and “Fun Reads”.
-          </div>
-        </div>
+        </a>
       </div>
 
       <div class="col-auto d-flex align-items-center">
@@ -78,33 +84,45 @@
       <!-- Feature Cards -->
       <div class="row g-4 mt-3">
         <div class="col-md-4">
-          <div class="card shadow-sm h-100">
-            <img src="{% static 'images/opening_hours.jpg' %}" class="card-img-top" alt="Opening Hours">
-            <div class="card-body">
-              <h5 class="card-title">Opening Hours &raquo;</h5>
-              <p class="card-text small">Find out the opening hours of each Acharya Nagarjuna University Library branch.</p>
+          <a href="{% url 'opening_hours' %}" class="text-decoration-none d-block h-100 resource-card">
+            <div class="card shadow-sm h-100">
+              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                <i class="fa-solid fa-clock fa-3x text-primary"></i>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">Opening Hours &raquo;</h5>
+                <p class="card-text small">Find out the opening hours of each Acharya Nagarjuna University Library branch.</p>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
 
         <div class="col-md-4">
-          <div class="card shadow-sm h-100">
-            <img src="{% static 'images/ask_librarian.jpg' %}" class="card-img-top" alt="Ask a Librarian">
-            <div class="card-body">
-              <h5 class="card-title">Ask a Librarian &raquo;</h5>
-              <p class="card-text small">Ask questions, get research help, and consult reference librarians.</p>
+          <a href="{% url 'ask_librarian' %}" class="text-decoration-none d-block h-100 resource-card">
+            <div class="card shadow-sm h-100">
+              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                <i class="fa-solid fa-question-circle fa-3x text-primary"></i>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">Ask a Librarian &raquo;</h5>
+                <p class="card-text small">Ask questions, get research help, and consult reference librarians.</p>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
 
         <div class="col-md-4">
-          <div class="card shadow-sm h-100">
-            <img src="{% static 'images/study_room.jpg' %}" class="card-img-top" alt="Book a Study Room">
-            <div class="card-body">
-              <h5 class="card-title">Book a Study Room &raquo;</h5>
-              <p class="card-text small">Reserve study spaces and reading rooms at ANU Central Library.</p>
+          <a href="{% url 'book_study_room' %}" class="text-decoration-none d-block h-100 resource-card">
+            <div class="card shadow-sm h-100">
+              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                <i class="fa-solid fa-chair fa-3x text-primary"></i>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">Book a Study Room &raquo;</h5>
+                <p class="card-text small">Reserve study spaces and reading rooms at ANU Central Library.</p>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -117,7 +135,7 @@
     <span class="small-text">Based on your department</span>
   </h6>
   <div class="book-strip">
-    <button class="scroll-arrow left" onclick="scrollStrip('csStrip', -300)">
+    <button class="scroll-arrow left" onclick="scrollStrip('csStrip', -300)" title="Scroll left" aria-label="Scroll left">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
     <div id="csStrip" class="book-scroller">
@@ -145,7 +163,7 @@
         <span class="small text-muted">No books found in this section.</span>
       {% endfor %}
     </div>
-    <button class="scroll-arrow right" onclick="scrollStrip('csStrip', 300)">
+    <button class="scroll-arrow right" onclick="scrollStrip('csStrip', 300)" title="Scroll right" aria-label="Scroll right">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   </div>
@@ -153,7 +171,7 @@
   <!-- SECTION: Trending Books -->
   <h6 class="section-heading">Trending Books</h6>
   <div class="book-strip">
-    <button class="scroll-arrow left" onclick="scrollStrip('trendingStrip', -300)">
+    <button class="scroll-arrow left" onclick="scrollStrip('trendingStrip', -300)" title="Scroll left" aria-label="Scroll left">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
     <div id="trendingStrip" class="book-scroller">
@@ -175,7 +193,7 @@
         <span class="small text-muted">No trending books found.</span>
       {% endfor %}
     </div>
-    <button class="scroll-arrow right" onclick="scrollStrip('trendingStrip', 300)">
+    <button class="scroll-arrow right" onclick="scrollStrip('trendingStrip', 300)" title="Scroll right" aria-label="Scroll right">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   </div>
@@ -183,7 +201,7 @@
   <!-- SECTION: Classic Books -->
   <h6 class="section-heading">Classic Books</h6>
   <div class="book-strip">
-    <button class="scroll-arrow left" onclick="scrollStrip('classicStrip', -300)">
+    <button class="scroll-arrow left" onclick="scrollStrip('classicStrip', -300)" title="Scroll left" aria-label="Scroll left">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
     <div id="classicStrip" class="book-scroller">
@@ -207,7 +225,7 @@
         <span class="small text-muted">No classic books found.</span>
       {% endfor %}
     </div>
-    <button class="scroll-arrow right" onclick="scrollStrip('classicStrip', 300)">
+    <button class="scroll-arrow right" onclick="scrollStrip('classicStrip', 300)" title="Scroll right" aria-label="Scroll right">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   </div>

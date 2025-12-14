@@ -123,7 +123,7 @@ def book_list(request):
         'authors': authors,
         'categories': categories,
     }
-    return render(request, 'portal/book_list.html', context)
+    return render(request, 'books/book_list.html', context)
 
 
 def book_detail(request, book_id):
@@ -352,6 +352,7 @@ def advanced_search_view(request):
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         departments = Department.objects.all()
+        authors = Book.objects.values_list('author', flat=True).distinct()
         categories = Book.objects.values_list('subject', flat=True).distinct()
         context = {
             "title": title,
@@ -441,3 +442,56 @@ def contact(request):
         }
     }
     return render(request, 'portal/contact.html', context)
+
+
+def opening_hours(request):
+    """
+    Display library opening hours for different branches.
+    """
+    context = {
+        'title': 'Opening Hours',
+        'hours_data': [
+            {'branch': 'Central Library', 'monday_friday': '8:00 AM - 8:00 PM', 'saturday': '9:00 AM - 5:00 PM', 'sunday': 'Closed'},
+            {'branch': 'Science Branch', 'monday_friday': '9:00 AM - 6:00 PM', 'saturday': 'Closed', 'sunday': 'Closed'},
+            {'branch': 'Arts Branch', 'monday_friday': '8:30 AM - 7:00 PM', 'saturday': '10:00 AM - 4:00 PM', 'sunday': 'Closed'},
+        ]
+    }
+    return render(request, 'portal/opening_hours.html', context)
+
+
+def ask_librarian(request):
+    """
+    Display a form for users to ask questions to the librarian.
+    """
+    if request.method == 'POST':
+        # Simple handling: log or send email (placeholder)
+        question = request.POST.get('question', '')
+        # In production, integrate with email or ticketing system
+        messages.success(request, 'Your question has been sent to the librarian. We will respond soon.')
+        return redirect('ask_librarian')
+    return render(request, 'portal/ask_librarian.html', {'title': 'Ask a Librarian'})
+
+
+def book_study_room(request):
+    """
+    Display information and form for booking a study room.
+    """
+    if request.method == 'POST':
+        # Simple handling: log booking request
+        date = request.POST.get('date', '')
+        time = request.POST.get('time', '')
+        messages.success(request, f'Study room booking request for {date} at {time} submitted.')
+        return redirect('book_study_room')
+    return render(request, 'portal/book_study_room.html', {'title': 'Book a Study Room'})
+
+
+def news(request):
+    """
+    Display news and events page.
+    """
+    news_items = NewsItem.objects.all().order_by('-published_on')
+    context = {
+        'news_items': news_items,
+        'title': 'News & Events'
+    }
+    return render(request, 'portal/news.html', context)

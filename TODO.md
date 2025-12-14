@@ -1,94 +1,23 @@
-# ANU-LMS Production Readiness Plan - Implementation Steps
+# TODO: Fix Library Services Cards Navigation on Home Page
 
-## Overview
-Approved plan to enhance the ANU-LMS application for production deployment based on identified gaps: database migration, static files handling, security, performance, error handling, email configuration, UX improvements, API development, testing/CI/CD, and backup/recovery. Proceed iteratively, confirming each step.
+The goal is to ensure clicks on the Library Services cards (Opening Hours, Ask a Librarian, Book a Study Room) reliably navigate to their respective pages (/opening-hours/, /ask-librarian/, /book-study-room/) without interference from JS or CSS. Current issues: Clicks not registering, likely due to event propagation or ripple effects in motion-effects.js.
 
-## Steps
+## Steps:
 
-1. **Database Migration to PostgreSQL**
-   - Install PostgreSQL and create database
-   - Update settings.py to use PostgreSQL configuration with environment variables
-   - Run migrations and data migration from SQLite
-   - Add database connection pooling (django-db-connection-pool)
-   - Test: Verify data integrity and performance improvements
+- [x] Step 1: Read and verify templates/home.html - Confirmed <a> tags wrap entire cards with `display: block;`, `text-decoration: none;`, `color: inherit;`, `cursor: pointer;`, and `pointer-events: none;` on child divs (resource-icon, resource-text) to allow bubbling. The structure is correct for native navigation.
 
-2. **Static Files and Media Handling**
-   - Configure proper static file serving (fix 404s for images like study_room.jpg, opening_hours.jpg)
-   - Set up media file storage (AWS S3 or local for development)
-   - Add missing static images (study_room.jpg, opening_hours.jpg, ask_librarian.jpg) and favicon.ico
-   - Configure WhiteNoise or Nginx for static serving in production
-   - Test: All static assets load without 404s
+- [x] Step 2: Read static/js/motion-effects.js - Confirmed .resource-card is excluded from ripple effects (selector '.card:not(.resource-card)'). Cursor tracking applies to 'a' and '.card', but does not block clicks. No other listeners affect .resource-card. No edits needed.
 
-3. **Security Enhancements**
-   - Implement HTTPS with SSL certificates (Let's Encrypt)
-   - Add security headers (CSP, HSTS, X-Frame-Options) via django-security
-   - Configure Django security settings (SECRET_KEY from environment, DEBUG=False)
-   - Add rate limiting (django-ratelimit) and basic DDoS protection
-   - Implement password strength validation and account lockout
-   - Test: Security headers present, HTTPS enforced
+- [ ] Step 3: Launch browser to http://127.0.0.1:8000/, scroll down to Library Services section, and test click on Opening Hours card (coordinates approx. 200, 250) to see if it navigates.
 
-4. **Performance Optimizations**
-   - Implement caching (Redis/Memcached) for database queries and sessions
-   - Add database query optimization and indexing (on book searches, transactions)
-   - Enable compression (django-compressor for static files)
-   - Set up CDN for static assets (Cloudflare)
-   - Optimize images and implement lazy loading
-   - Test: Page load times <2s, cached queries working
+- [ ] Step 4: If click fails, edit static/js/motion-effects.js to disable all interactions on .resource-card (e.g., add condition to skip if target.closest('.resource-card')).
 
-5. **Error Handling and Logging**
-   - Implement proper error pages (404, 500) with custom templates
-   - Add comprehensive logging with log rotation (django-logging, filebeat)
-   - Set up monitoring and alerting (Sentry for error tracking)
-   - Add health check endpoints
-   - Test: Custom error pages display, logs capture errors
+- [ ] Step 5: Re-test in browser: Scroll, click all three cards, confirm navigation to detail pages (200 OK, content loads).
 
-6. **Email Configuration**
-   - Replace console email backend with SMTP (SendGrid/Gmail)
-   - Add email templates and HTML emails (django-templated-mail)
-   - Implement email queuing (Celery + Redis) for bulk emails
-   - Configure email settings in environment variables
-   - Test: Overdue emails sent successfully via SMTP
+- [ ] Step 6: Test edge cases: Click on icon/text specifically, keyboard navigation (tab to card, enter), mobile view (resize browser).
 
-7. **User Experience Improvements**
-   - Add loading states and progress indicators (AJAX for forms)
-   - Implement pagination for large lists (books, transactions)
-   - Add search autocomplete and advanced filters
-   - Improve mobile responsiveness and accessibility
-   - Add dark mode toggle and user preferences
-   - Test: Mobile navigation works, search is fast and accurate
+- [ ] Step 7: Verify backend: Direct curl to endpoints (e.g., curl http://127.0.0.1:8000/opening-hours/) for 200 OK.
 
-8. **API Development**
-   - Add REST API endpoints using Django REST Framework (books, transactions, users)
-   - Implement API authentication (JWT/OAuth with django-rest-auth)
-   - Add API documentation (drf-spectacular for Swagger/OpenAPI)
-   - Create mobile app integration endpoints
-   - Test: API endpoints return correct data, authentication works
+- [ ] Step 8: Update this TODO.md with [x] for completed steps and remove unnecessary ones.
 
-9. **Testing and CI/CD**
-   - Add comprehensive unit and integration tests (pytest, coverage)
-   - Set up automated testing pipeline (GitHub Actions)
-   - Implement code quality checks (black, flake8, mypy)
-   - Configure deployment automation (Docker, docker-compose)
-   - Add staging environment
-   - Test: All tests pass, CI pipeline runs successfully
-
-10. **Backup and Recovery**
-    - Implement automated database backups (django-dbbackup)
-    - Add data export/import functionality for users
-    - Set up disaster recovery procedures (offsite backups)
-    - Create backup verification scripts
-    - Test: Backup creation and restoration works
-
-## Progress Tracking
-- [x] Step 1: Database migration (skipped - PostgreSQL installation required for production)
-- [x] Step 2: Static files handling (added missing images: study_room.jpg, opening_hours.jpg, ask_librarian.jpg, favicon.ico)
-- [x] Step 3: Security enhancements
-- [ ] Step 4: Performance optimizations
-- [ ] Step 5: Error handling and logging
-- [ ] Step 6: Email configuration
-- [ ] Step 7: UX improvements
-- [ ] Step 8: API development
-- [ ] Step 9: Testing and CI/CD
-- [ ] Step 10: Backup and recovery
-
-Update this file after each step. Total est. time: 2-4 weeks iterative depending on complexity.
+Proceeding with Step 1 now.

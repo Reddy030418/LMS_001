@@ -1,0 +1,82 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Advanced Search - ANU Library{% endblock %}
+
+{% block content %}
+<div class="content-header">
+  <h1>Advanced Search <span>&raquo;</span></h1>
+  <p class="lead">Refine your search with multiple criteria for books, journals, and resources.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <form method="get" action="{% url 'book_list' %}" class="advanced-search-form">
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label for="title" class="form-label">Title</label>
+          <input type="text" class="form-control" id="title" name="title" placeholder="Enter book title or keywords" value="{{ request.GET.title }}">
+        </div>
+        <div class="col-md-6">
+          <label for="author" class="form-label">Author</label>
+          <input type="text" class="form-control" id="author" name="author" placeholder="Enter author name" value="{{ request.GET.author }}">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label for="subject" class="form-label">Subject</label>
+          <select class="form-select" id="subject" name="subject">
+            <option value="">All Subjects</option>
+            <option value="Computer Science" {% if request.GET.subject == 'Computer Science' %}selected{% endif %}>Computer Science</option>
+            <option value="Literature" {% if request.GET.subject == 'Literature' %}selected{% endif %}>Literature</option>
+            <option value="History" {% if request.GET.subject == 'History' %}selected{% endif %}>History</option>
+            <option value="Science" {% if request.GET.subject == 'Science' %}selected{% endif %}>Science</option>
+            <option value="Other" {% if request.GET.subject == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="isbn" class="form-label">ISBN/ISSN</label>
+          <input type="text" class="form-control" id="isbn" name="isbn" placeholder="Enter ISBN or ISSN" value="{{ request.GET.isbn }}">
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label for="year_from" class="form-label">Year From</label>
+          <input type="number" class="form-control" id="year_from" name="year_from" min="1900" max="2024" value="{{ request.GET.year_from }}">
+        </div>
+        <div class="col-md-6">
+          <label for="year_to" class="form-label">Year To</label>
+          <input type="number" class="form-control" id="year_to" name="year_to" min="1900" max="2024" value="{{ request.GET.year_to }}">
+        </div>
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="submit" class="btn btn-primary me-md-2">Search</button>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Clear All</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Search Tips</h5>
+        <ul class="list-unstyled small">
+          <li><i class="fa-solid fa-circle text-primary me-2"></i>Use keywords or exact phrases in title/author fields.</li>
+          <li><i class="fa-solid fa-circle text-primary me-2"></i>Select subjects to narrow results.</li>
+          <li><i class="fa-solid fa-circle text-primary me-2"></i>Enter year range for publication dates.</li>
+          <li><i class="fa-solid fa-circle text-primary me-2"></i>ISBN/ISSN for specific editions.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if results %}
+<div class="mt-5">
+  <h3>Search Results ({{ results.count }})</h3>
+  <!-- Display results here if needed, but since form submits to book_list, redirect there -->
+</div>
+{% endif %}
+{% endblock %}

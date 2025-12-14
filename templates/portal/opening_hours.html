@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <main class="content-card">
+    <header class="content-header">
+      <h1>{{ title }} <span>&raquo;</span></h1>
+      <p>Find out the opening hours of each Acharya Nagarjuna University Library branch.</p>
+    </header>
+
+    <section class="hours-table">
+      <table class="library-hours">
+        <thead>
+          <tr>
+            <th>Branch</th>
+            <th>Monday - Friday</th>
+            <th>Saturday</th>
+            <th>Sunday</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for hour in hours_data %}
+          <tr>
+            <td>{{ hour.branch }}</td>
+            <td>{{ hour.monday_friday }}</td>
+            <td>{{ hour.saturday }}</td>
+            <td>{{ hour.sunday }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <div class="note">
+      <p><strong>Note:</strong> Hours may vary during holidays or special events. Please check with the library for updates.</p>
+    </div>
+  </main>
+</div>
+
+<style>
+  .hours-table {
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .library-hours {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.15);
+  }
+  .library-hours th,
+  .library-hours td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .library-hours th {
+    background: #f3f4f6;
+    font-weight: 600;
+    color: #111827;
+  }
+  .library-hours tr:hover {
+    background: #f9fafb;
+  }
+  .note {
+    margin-top: 24px;
+    padding: 16px;
+    background: #fef3c7;
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+  }
+  .note p {
+    margin: 0;
+    color: #92400e;
+  }
+</style>
+{% endblock %}

@@ -9,6 +9,17 @@ document.addEventListener('DOMContentLoaded', function() {
     initParallaxEffects();
     initMagneticElements();
     initRippleEffects();
+
+    // Specific navigation handler for resource cards to ensure clicks work
+    const resourceLinks = document.querySelectorAll('a.resource-card');
+    console.log('Resource links found:', resourceLinks.length);
+    resourceLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            console.log('Resource card link clicked:', link.href);
+            // Ensure navigation
+            window.location.href = link.href;
+        });
+    });
 });
 
 // Mouse Tracking and Highlighting (Reduced Motion)
@@ -56,7 +67,7 @@ function initMouseTracking() {
     updateCursor();
 
     // Subtle cursor changes on interactive elements
-    const interactiveElements = document.querySelectorAll('button, a, .card, .book-card, .btn');
+    const interactiveElements = document.querySelectorAll('button, a:not(.resource-card), .card:not(.resource-card), .book-card, .btn');
 
     interactiveElements.forEach(el => {
         el.addEventListener('mouseenter', () => {
@@ -196,7 +207,7 @@ function initMagneticElements() {
 
 // Ripple Effects
 function initRippleEffects() {
-    const rippleElements = document.querySelectorAll('.ripple, .btn, .card');
+    const rippleElements = document.querySelectorAll('.ripple, .btn, .card:not(.resource-card)');
 
     rippleElements.forEach(el => {
         el.addEventListener('click', (e) => {

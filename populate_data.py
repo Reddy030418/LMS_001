@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from datetime import date, timedelta
 
 # Create departments
-departments = ['Computer Science', 'Literature', 'Mathematics', 'Physics']
+departments = ['Computer Science', 'Literature', 'Mathematics', 'Physics', 'History', 'Biology', 'Chemistry', 'Economics', 'Psychology', 'Sociology', 'Philosophy', 'Art', 'Music', 'Engineering', "Business", 'Education', 'Law', 'Medicine', 'Political Science', 'Environmental Science']
 for name in departments:
     Department.objects.get_or_create(name=name, code=name[:3].upper())
 
@@ -22,6 +22,11 @@ books_data = [
     {'title': 'The Little Prince', 'author': 'Antoine de Saint-Exupéry', 'department': Department.objects.get(name='Literature'), 'is_kids': True, 'total_copies': 12, 'available_copies': 10},
     {'title': 'Calculus', 'author': 'James Stewart', 'department': Department.objects.get(name='Mathematics'), 'total_copies': 8, 'available_copies': 6},
     {'title': 'Quantum Mechanics', 'author': 'David J. Griffiths', 'department': Department.objects.get(name='Physics'), 'total_copies': 5, 'available_copies': 3},
+    {'title': 'Design Patterns', 'author': 'Erich Gamma', 'department': Department.objects.get(name='Computer Science'), 'is_trending': True, 'total_copies': 6, 'available_copies': 4},
+    {'title': '1984', 'author': 'George Orwell', 'department': Department.objects.get(name='Literature'), 'is_classic': True, 'total_copies': 9, 'available_copies': 7},
+    {'title': 'Linear Algebra', 'author': 'Gilbert Strang', 'department': Department.objects.get(name='Mathematics'), 'total_copies': 7, 'available_copies': 5},
+    {'title': 'The History of Rome', 'author': 'Theodor Mommsen', 'department': Department.objects.get(name='History'), 'total_copies': 4, 'available_copies': 2},
+    {'title': 'Electromagnetism', 'author': 'David J. Griffiths', 'department': Department.objects.get(name='Physics'), 'total_copies': 6, 'available_copies': 4},
 ]
 
 for data in books_data:

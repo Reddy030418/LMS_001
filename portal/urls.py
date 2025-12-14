@@ -21,4 +21,8 @@ urlpatterns = [
     path('my-requests/', views.my_requests, name='my_requests'),
     path('manage-requests/', views.manage_requests, name='manage_requests'),
     path('contact/', views.contact, name='contact'),
+    path('news/', views.news, name='news'),
+    path('opening-hours/', views.opening_hours, name='opening_hours'),
+    path('ask-librarian/', views.ask_librarian, name='ask_librarian'),
+    path('book-study-room/', views.book_study_room, name='book_study_room'),
 ]
