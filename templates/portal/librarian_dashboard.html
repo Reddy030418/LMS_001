@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Librarian Dashboard - ANU LMS{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Librarian Dashboard</h1>
+
+    <!-- Low Stock Books -->
+    <div class="dashboard-card">
+        <h2>Low Stock Books (≤2 copies)</h2>
+        {% if low_stock %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Available Copies</th>
+                        <th>Total Copies</th>
+                        <th>Department</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in low_stock %}
+                        <tr>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.available_copies }}</td>
+                            <td>{{ book.total_copies }}</td>
+                            <td>{{ book.department.name }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>All books have sufficient stock.</p>
+        {% endif %}
+    </div>
+
+    <!-- Frequent Overdue Students -->
+    <div class="dashboard-card">
+        <h2>Frequent Overdue Students</h2>
+        {% if frequent_overdues %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Overdue Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in frequent_overdues %}
+                        <tr>
+                            <td>{{ student.user__username }}</td>
+                            <td>{{ student.overdue_count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No frequent overdues.</p>
+        {% endif %}
+    </div>
+
+    <!-- Department Inventory Pressure -->
+    <div class="dashboard-card">
+        <h2>Department Inventory Pressure</h2>
+        {% if dept_inventory %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Total Copies</th>
+                        <th>Available Copies</th>
+                        <th>Pressure (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in dept_inventory %}
+                        <tr>
+                            <td>{{ dept.department__name }}</td>
+                            <td>{{ dept.total }}</td>
+                            <td>{{ dept.available }}</td>
+                            <td>{% widthratio dept.available dept.total 100 %}%</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No department data.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.dashboard-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f2f2f2;
+}
+</style>
+{% endblock %}

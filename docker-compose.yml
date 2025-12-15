@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    container_name: anu_lms_web
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py import_departments &&
+      python manage.py import_categories &&
+      python manage.py import_books &&
+      python manage.py import_users &&
+      python manage.py import_news &&
+      python manage.py import_eresources &&
+      python manage.py generate_transactions --count 3000 &&
+      gunicorn anu_lms.wsgi:application --bind 0.0.0.0:8000
+      "
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DEBUG=False
+      - DB_NAME=anu_lms
+      - DB_USER=anu
+      - DB_PASSWORD=anu123
+      - DB_HOST=db
+
+  db:
+    image: postgres:15
+    container_name: anu_lms_db
+    environment:
+      POSTGRES_DB: anu_lms
+      POSTGRES_USER: anu
+      POSTGRES_PASSWORD: anu123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

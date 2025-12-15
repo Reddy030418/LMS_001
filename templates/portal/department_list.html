@@ -1,0 +1,96 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Departments</h1>
+    <p class="text-muted">Explore all academic departments at Acharya Nagarjuna University with detailed book statistics and loan information.</p>
+
+    <!-- Search Form -->
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search departments by name or code..." value="{{ query }}">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    {% if page_obj %}
+    <div class="row">
+        {% for department in page_obj %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ department.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ department.code }}</h6>
+                    <p class="card-text">{{ department.description|default:"No description available." }}</p>
+                    <p class="card-text"><small class="text-muted">Status: {% if department.is_active %}Active{% else %}Inactive{% endif %}</small></p>
+
+                    <!-- Book Statistics -->
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <strong>Total Books:</strong> {{ department.total_books|default:0 }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Total Copies:</strong> {{ department.total_copies|default:0 }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Available:</strong> <span class="text-success">{{ department.available_copies|default:0 }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Issued:</strong> <span class="text-warning">{{ department.issued_copies|default:0 }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Active Loans:</strong> {{ department.active_loans|default:0 }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Overdue:</strong> <span class="text-danger">{{ department.overdue_loans|default:0 }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-3">
+                        <a href="{% url 'department_books' dept_id=department.id %}" class="btn btn-primary btn-sm">View Books</a>
+                        {% if user.is_staff %}
+                        <a href="/admin/portal/department/{{ department.id }}/change/" class="btn btn-secondary btn-sm">Edit</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Department pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-info">
+        No departments found matching your search.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

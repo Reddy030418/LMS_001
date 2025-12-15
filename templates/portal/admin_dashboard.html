@@ -1,168 +1,247 @@
-{% extends 'portal/base.html' %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Admin Dashboard – ANU Library{% endblock %}
+{% block title %}Admin Dashboard - ANU LMS{% endblock %}
 
 {% block content %}
-<h3 class="mt-3">Admin Dashboard</h3>
+<div class="dashboard-container">
+    <h1>Admin Dashboard</h1>
 
-<div class="row mt-3 g-3">
-  <div class="col-md-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Total Books</h6>
-        <h3>{{ total_books }}</h3>
-      </div>
+    <!-- KPIs -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <h3>Total Books</h3>
+            <p>{{ total_books }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Total Copies</h3>
+            <p>{{ total_copies }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Active Students</h3>
+            <p>{{ active_students }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Total Issues</h3>
+            <p>{{ total_issues }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Active Issues</h3>
+            <p>{{ active_issues }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Overdue Count</h3>
+            <p>{{ overdue_count }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Fine Collected</h3>
+            <p>₹{{ total_fine_collected }}</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Pending Fines</h3>
+            <p>₹{{ pending_fines }}</p>
+        </div>
     </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Total Members</h6>
-        <h3>{{ total_members }}</h3>
-      </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h2>Issues by Department</h2>
+            <canvas id="deptIssuesChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h2>Monthly Issue Trends</h2>
+            <canvas id="monthlyTrendsChart"></canvas>
+        </div>
     </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Active Loans</h6>
-        <h3>{{ active_loans }}</h3>
-      </div>
+
+    <!-- Tables -->
+    <div class="tables-grid">
+        <div class="table-card">
+            <h2>Overdue Books</h2>
+            {% if overdue_books %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>User</th>
+                            <th>Due Date</th>
+                            <th>Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in overdue_books %}
+                            <tr>
+                                <td>{{ book.book.title }}</td>
+                                <td>{{ book.user.username }}</td>
+                                <td>{{ book.due_date }}</td>
+                                <td>₹{{ book.fine_amount }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No overdues.</p>
+            {% endif %}
+        </div>
+        <div class="table-card">
+            <h2>Most Issued Books</h2>
+            {% if most_issued %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Total Issues</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in most_issued %}
+                            <tr>
+                                <td>{{ book.book__title }}</td>
+                                <td>{{ book.total_issues }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No data.</p>
+            {% endif %}
+        </div>
     </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Overdue</h6>
-        <h3 class="text-danger">{{ overdue }}</h3>
-      </div>
-    </div>
-  </div>
 </div>
 
-<div class="row mt-4">
-  <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-body" style="height: 396px;">
-        <h6 class="mb-3">Issues per Department</h6>
-        <canvas id="issuesChart" height="200"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-body" style="height: 396px;">
-        <h6 class="mb-3">Active Loans per Department</h6>
-        <canvas id="loansChart" height="200"></canvas>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row mt-4">
-  <div class="col-md-8">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="mb-2">Quick Reports</h6>
-        <form method="get" class="mb-3">
-          <div class="row g-2">
-            <div class="col-md-3">
-              <input type="date" name="start" class="form-control form-control-sm" placeholder="Start Date">
-            </div>
-            <div class="col-md-3">
-              <input type="date" name="end" class="form-control form-control-sm" placeholder="End Date">
-            </div>
-            <div class="col-md-3">
-              <button type="submit" formaction="{% url 'export_csv' %}" class="btn btn-outline-dark btn-sm w-100">
-                <i class="fa-solid fa-file-csv me-1"></i> Export CSV
-              </button>
-            </div>
-            <div class="col-md-3">
-              <button type="submit" formaction="{% url 'export_pdf' %}" class="btn btn-outline-dark btn-sm w-100">
-                <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Issues Chart (Bar)
-  (function() {
-    const ctx = document.getElementById('issuesChart');
-    if (!ctx) return;
+document.addEventListener('DOMContentLoaded', function() {
+    // Department Issues Bar Chart
+    fetch('/api/department-issues/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('deptIssuesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => item.book__department__name || 'Unknown'),
+                    datasets: [{
+                        label: 'Issues',
+                        data: data.map(item => item.issue_count),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
 
-    const issuesData = {{ issues_data|safe }};
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: issuesData.labels,
-        datasets: [{
-          label: 'Total Issues',
-          data: issuesData.data,
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0 }
-          }
-        }
-      }
-    });
-  })();
-
-  // Loans Chart (Pie)
-  (function() {
-    const ctx = document.getElementById('loansChart');
-    if (!ctx) return;
-
-    const loansData = {{ loans_data|safe }};
-    new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: loansData.labels,
-        datasets: [{
-          data: loansData.data,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(255, 205, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)'
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 205, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)'
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom'
-          }
-        }
-      }
-    });
-  })();
+    // Monthly Trends Line Chart
+    fetch('/api/monthly-trends/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('monthlyTrendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => item.month),
+                    datasets: [{
+                        label: 'Issues',
+                        data: data.map(item => item.count),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+});
 </script>
+
+<style>
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    text-align: center;
+}
+
+.kpi-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+}
+
+.kpi-card p {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 0;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.table-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f2f2f2;
+}
+</style>
 {% endblock %}

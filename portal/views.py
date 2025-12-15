@@ -3,7 +3,8 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
+from django.db.models.functions import TruncMonth
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -16,7 +17,7 @@ import csv
 from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource
 from .forms import BookForm, IssueForm, ReturnForm, BookRequestForm, ProfileForm
 from .utils import calculate_fine
-from .ai_recommender import get_ai_recommendations_for_user
+from .services.recommender import get_recommendations
 
 
 def home(request):
@@ -93,7 +94,7 @@ def signup_view(request):
 def book_list(request):
     query = request.GET.get('q', '')
     book_type = request.GET.get('type', 'all')
-    books = Book.objects.all()
+    books = Book.objects.all().order_by('-created_at')
 
     if query:
         if book_type == 'title':
@@ -136,11 +137,18 @@ def book_detail(request, book_id):
     )
     pending_request = BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists()
     active_loan = Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists()
+
+    # Similar books (content-based)
+    similar_books = Book.objects.filter(
+        Q(department=book.department) | Q(category=book.category) | Q(subject=book.subject)
+    ).exclude(id=book.id).distinct()[:6]
+
     context = {
         'book': book,
         'can_request': can_request,
         'pending_request': pending_request,
         'active_loan': active_loan,
+        'similar_books': similar_books,
     }
     return render(request, 'portal/book_detail.html', context)
 
@@ -149,13 +157,200 @@ def book_detail(request, book_id):
 def my_books(request):
     active_loans = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book')
     history = Transaction.objects.filter(user=request.user, returned_on__isnull=False).order_by('-returned_on').select_related('book')
-    recommendations = get_ai_recommendations_for_user(request.user, Book.objects.filter(is_trending=True), limit=6)
+    recommendations = get_recommendations(request.user, limit=6)
     context = {
         'active_loans': active_loans,
         'history': history,
         'recommendations': recommendations,
     }
     return render(request, 'portal/my_books.html', context)
+
+
+@login_required
+def student_dashboard(request):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'student':
+        return redirect('home')
+
+    # Currently issued books
+    issued_books = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book')
+
+    # Fine summary
+    fine_summary = Transaction.objects.filter(user=request.user, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0
+
+    # Borrowing history
+    history = Transaction.objects.filter(user=request.user).select_related('book').order_by('-issued_on')
+
+    # Recommendations
+    recommendations = get_recommendations(request.user, limit=6)
+
+    context = {
+        'issued_books': issued_books,
+        'fine_summary': fine_summary,
+        'history': history,
+        'recommendations': recommendations,
+    }
+    return render(request, 'portal/student_dashboard.html', context)
+
+
+@login_required
+def librarian_dashboard(request):
+    if not request.user.is_staff:
+        return redirect('home')
+
+    # Low stock books
+    low_stock = Book.objects.filter(available_copies__lte=2).select_related('department')
+
+    # Frequent overdue students
+    frequent_overdues = Transaction.objects.filter(fine_amount__gt=0).values('user__username').annotate(overdue_count=Count('id')).order_by('-overdue_count')[:10]
+
+    # Department inventory pressure
+    dept_inventory = Book.objects.values('department__name').annotate(
+        total=Sum('total_copies'),
+        available=Sum('available_copies')
+    ).order_by('department__name')
+
+    context = {
+        'low_stock': low_stock,
+        'frequent_overdues': frequent_overdues,
+        'dept_inventory': dept_inventory,
+    }
+    return render(request, 'portal/librarian_dashboard.html', context)
+
+
+@login_required
+def admin_dashboard(request):
+    if not request.user.is_superuser:
+        return redirect('home')
+
+    # System KPIs
+    total_books = Book.objects.count()
+    total_copies = Book.objects.aggregate(total=Sum('total_copies'))['total'] or 0
+    active_students = Profile.objects.filter(role='student', is_active_member=True).count()
+    total_issues = Transaction.objects.count()
+    active_issues = Transaction.objects.filter(returned_on__isnull=True).count()
+    overdue_count = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count()
+    total_fine_collected = Transaction.objects.filter(returned_on__isnull=False, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0
+    pending_fines = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).aggregate(total=Sum('fine_amount'))['total'] or 0
+
+    # Overdue books
+    overdue_books = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).select_related('book', 'user')[:20]
+
+    # Department-wise issues
+    dept_issues = Transaction.objects.values('book__department__name').annotate(issue_count=Count('id')).order_by('-issue_count')
+
+    # Most issued books
+    most_issued = Transaction.objects.values('book__title').annotate(total_issues=Count('id')).order_by('-total_issues')[:10]
+
+    # Monthly trends
+    monthly_trends = Transaction.objects.annotate(month=TruncMonth('issued_on')).values('month').annotate(count=Count('id')).order_by('month')
+
+    context = {
+        'total_books': total_books,
+        'total_copies': total_copies,
+        'active_students': active_students,
+        'total_issues': total_issues,
+        'active_issues': active_issues,
+        'overdue_count': overdue_count,
+        'total_fine_collected': total_fine_collected,
+        'pending_fines': pending_fines,
+        'overdue_books': overdue_books,
+        'dept_issues': dept_issues,
+        'most_issued': most_issued,
+        'monthly_trends': monthly_trends,
+    }
+    return render(request, 'portal/admin_dashboard.html', context)
+
+
+# API Endpoints for Dashboards
+@login_required
+def dashboard_stats(request):
+    if request.user.is_superuser:
+        # Admin stats
+        data = {
+            'total_books': Book.objects.count(),
+            'total_copies': Book.objects.aggregate(total=Sum('total_copies'))['total'] or 0,
+            'active_students': Profile.objects.filter(role='student', is_active_member=True).count(),
+            'total_issues': Transaction.objects.count(),
+            'active_issues': Transaction.objects.filter(returned_on__isnull=True).count(),
+            'overdue_count': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
+            'total_fine_collected': Transaction.objects.filter(returned_on__isnull=False, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0,
+            'pending_fines': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).aggregate(total=Sum('fine_amount'))['total'] or 0,
+        }
+    elif request.user.is_staff:
+        # Librarian stats
+        data = {
+            'low_stock_count': Book.objects.filter(available_copies__lte=2).count(),
+            'overdue_count': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
+            'pending_requests': BookRequest.objects.filter(status='PENDING').count(),
+        }
+    else:
+        # Student stats
+        data = {
+            'active_loans': Transaction.objects.filter(user=request.user, returned_on__isnull=True).count(),
+            'total_fines': Transaction.objects.filter(user=request.user, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0,
+            'total_borrowed': Transaction.objects.filter(user=request.user).count(),
+        }
+    return JsonResponse(data)
+
+
+@login_required
+def department_issues_api(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    data = Transaction.objects.values('book__department__name').annotate(issue_count=Count('id')).order_by('-issue_count')
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def monthly_trends_api(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    data = Transaction.objects.annotate(month=TruncMonth('issued_on')).values('month').annotate(count=Count('id')).order_by('month')
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def most_issued_books_api(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    data = Transaction.objects.values('book__title').annotate(total_issues=Count('id')).order_by('-total_issues')[:10]
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def overdue_books_api(request):
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    data = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).select_related('book', 'user').values(
+        'book__title', 'user__username', 'due_date', 'fine_amount'
+    )[:20]
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def low_stock_books_api(request):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    data = Book.objects.filter(available_copies__lte=2).select_related('department').values(
+        'title', 'available_copies', 'total_copies', 'department__name'
+    )
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def student_issued_api(request):
+    data = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book').values(
+        'book__title', 'due_date', 'fine_amount'
+    )
+    return JsonResponse(list(data), safe=False)
+
+
+@login_required
+def student_history_api(request):
+    data = Transaction.objects.filter(user=request.user).select_related('book').order_by('-issued_on').values(
+        'book__title', 'issued_on', 'returned_on', 'fine_amount'
+    )[:50]
+    return JsonResponse(list(data), safe=False)
 
 
 @login_required
@@ -320,11 +515,11 @@ def search_view(request):
     query = request.GET.get('q', '')
     books = Book.objects.filter(
         Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
-    )
+    ).order_by('-created_at')
     paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    context = {'page_obj': page_obj, 'query': query}
+    context = {'page_obj': page_obj, 'results': page_obj.object_list, 'query': query}
     return render(request, 'portal/search_results.html', context)
 
 
@@ -495,3 +690,213 @@ def news(request):
         'title': 'News & Events'
     }
     return render(request, 'portal/news.html', context)
+
+
+def department_list(request):
+    """
+    Display list of all active departments with book statistics and search.
+    """
+    query = request.GET.get('q', '')
+    departments = Department.objects.filter(is_active=True).annotate(
+        total_books=Count('book'),
+        total_copies=Sum('book__total_copies'),
+        available_copies=Sum('book__available_copies'),
+        issued_copies=Sum('book__total_copies') - Sum('book__available_copies'),
+        active_loans=Count('book__transaction', filter=Q(book__transaction__returned_on__isnull=True)),
+        overdue_loans=Count('book__transaction', filter=Q(book__transaction__returned_on__isnull=True, book__transaction__due_date__lt=timezone.now().date()))
+    ).order_by('name')
+
+    if query:
+        departments = departments.filter(Q(name__icontains=query) | Q(code__icontains=query))
+
+    paginator = Paginator(departments, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'title': 'Departments - ANU LMS'
+    }
+    return render(request, 'portal/department_list.html', context)
+
+
+def department_books(request, dept_id):
+    """
+    Display books for a specific department.
+    """
+    department = get_object_or_404(Department, pk=dept_id)
+    books = Book.objects.filter(department=department).order_by('-created_at')
+
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'department': department,
+        'title': f'Books in {department.name} - ANU LMS'
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def all_search(request):
+    """
+    Search books by all fields (title, author, subject).
+    """
+    query = request.GET.get('q', '')
+    if query:
+        books = Book.objects.filter(
+            Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
+        ).order_by('-created_at')
+    else:
+        books = Book.objects.none()
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'title': f'Search Results for "{query}"'
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def title_search(request):
+    """
+    Search books by title.
+    """
+    query = request.GET.get('q', '')
+    if query:
+        books = Book.objects.filter(title__icontains=query).order_by('-created_at')
+    else:
+        books = Book.objects.none()
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'title': f'Title Search: "{query}"'
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def author_search(request):
+    """
+    Search books by author.
+    """
+    query = request.GET.get('q', '')
+    if query:
+        books = Book.objects.filter(author__icontains=query).order_by('-created_at')
+    else:
+        books = Book.objects.none()
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'title': f'Author Search: "{query}"'
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def subject_search(request):
+    """
+    Search books by subject.
+    """
+    query = request.GET.get('q', '')
+    if query:
+        books = Book.objects.filter(subject__icontains=query).order_by('-created_at')
+    else:
+        books = Book.objects.none()
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'title': f'Subject Search: "{query}"'
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def trending_books(request):
+    """
+    Display trending books page.
+    """
+    books = Book.objects.filter(is_trending=True).order_by('-created_at')
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'title': 'Trending Books',
+        'is_book_list': True,
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def new_arrivals(request):
+    """
+    Display new arrivals page.
+    """
+    books = Book.objects.order_by('-created_at')[:50]
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'title': 'New Arrivals',
+        'is_book_list': True,
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def rare_books(request):
+    """
+    Display rare books page.
+    """
+    books = Book.objects.filter(subject__icontains='Rare').order_by('title')
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'title': 'Rare Books',
+        'is_book_list': True,
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def theses_dissertations(request):
+    """
+    Display theses and dissertations page.
+    """
+    books = Book.objects.filter(subject__icontains='Thesis').order_by('title')
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'title': 'Theses & Dissertations',
+        'is_book_list': True,
+    }
+    return render(request, 'books/book_list.html', context)
+
+
+def anu_archives(request):
+    """
+    Display ANU archives page.
+    """
+    books = Book.objects.filter(subject__icontains='Archive').order_by('title')
+    paginator = Paginator(books, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'title': 'ANU Archives',
+        'is_book_list': True,
+    }
+    return render(request, 'books/book_list.html', context)

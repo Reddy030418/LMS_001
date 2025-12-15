@@ -398,6 +398,67 @@
 /* Badge Hover Effects */
 .badge {
     transition: all 0.3s ease;
+
+/* Reduced hover effects specifically for cards inside <section> */
+section .card,
+section .book-card,
+section .hero-card,
+section .eresources-card {
+    /* keep a gentle shadow transition only */
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+section .card:hover,
+section .book-card:hover,
+section .hero-card:hover,
+section .eresources-card:hover {
+    /* disable translate/scale jumps and use a soft shadow */
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+}
+
+/* Prevent images inside cards from scaling on hover */
+section .card .card-img-top,
+section .book-cover-container,
+section .book-cover-img,
+section .eresources-card-img {
+    transform: none !important;
+    transition: none !important;
+}
+
+/* If you want to completely remove hover reactions in a specific section,
+   add a class to the section (e.g. <section class="no-hover">) and use:
+
+   .no-hover .card,
+   .no-hover .book-card { transform: none !important; transition: none !important; box-shadow: none !important; }
+
+*/
+
+/* === Strong global removal of hover/animation/transform inside SECTION tags === */
+/* This disables transitions, transforms, animations and box-shadows for anything inside a <section>. */
+section,
+section * {
+    transition: none !important;
+    animation: none !important;
+}
+
+section *:hover,
+section *:focus {
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+    background-color: inherit !important;
+}
+
+section *::before,
+section *::after {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Keep pointer interactions but remove motion — if you want to also disable pointer hover
+   styles (e.g., color shifts), remove or adjust the `background-color`/`color` rules above. */
 }
 
 .badge:hover {
@@ -850,4 +911,44 @@
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+/* Remove hover effects for book-cards in book-strip sections */
+.book-strip .book-card {
+    transition: none !important;
+}
+
+.book-strip .book-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.book-strip .book-card::before {
+    display: none !important;
+}
+
+.book-strip .book-card:hover::before {
+    opacity: 0 !important;
+}
+
+.book-strip .book-cover-container {
+    transition: none !important;
+}
+
+.book-strip .book-card:hover .book-cover-container {
+    transform: none !important;
+}
+
+.book-strip .book-cover-img {
+    transition: none !important;
+}
+
+.book-strip .book-card:hover .book-cover-img {
+    transform: none !important;
+}
+
+/* Also override general card hover if applied */
+.book-strip .card:hover {
+    transform: none !important;
+    box-shadow: none !important;
 }

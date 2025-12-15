@@ -1,0 +1,19 @@
+name,code,description,is_active
+Computer Science & Engineering,CSE,Focus on algorithms, AI, software development, and computer systems.,TRUE
+Electronics & Communication Engineering,ECE,Deals with electronic devices, circuits, and communication systems.,TRUE
+Electrical Engineering,EEE,Covers power systems, electrical machines, and control systems.,TRUE
+Mechanical Engineering,ME,Involves design, manufacturing, and maintenance of mechanical systems.,TRUE
+Civil Engineering,CE,Focuses on construction, structural engineering, and infrastructure development.,TRUE
+Information Technology,IT,Emphasizes information management, networking, and database systems.,TRUE
+Law,LAW,Studies legal principles, constitutional law, and jurisprudence.,TRUE
+History,HIS,Explores historical events, civilizations, and cultural heritage.,TRUE
+Geography,GEO,Covers physical geography, human geography, and environmental studies.,TRUE
+Economics,ECO,Analyzes economic theories, markets, and policy-making.,TRUE
+English Literature,ENG,Focuses on literary works, criticism, and language studies.,TRUE
+Mathematics,MAT,Includes pure math, applied math, and statistical methods.,TRUE
+Physics,PHY,Studies matter, energy, and fundamental forces of nature.,TRUE
+Chemistry,CHE,Deals with chemical reactions, materials, and biochemistry.,TRUE
+Biotechnology,BIO,Combines biology and technology for medical and industrial applications.,TRUE
+Management Studies,MBA,Focuses on business administration, finance, and marketing.,TRUE
+Education,EDU,Prepares for teaching methodologies and educational psychology.,TRUE
+General Studies,GEN,Interdisciplinary studies covering humanities, sciences, and social sciences.,TRUE

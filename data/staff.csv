@@ -1,0 +1,4 @@
+username,email,password,role,is_staff,is_superuser
+LIB001,librarian1@anu.edu,lib@123,librarian,TRUE,FALSE
+LIB002,librarian2@anu.edu,lib@123,librarian,TRUE,FALSE
+ADMIN001,admin@anu.edu,admin123,admin,TRUE,TRUE

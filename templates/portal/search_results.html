@@ -1,35 +1,64 @@
-{% extends "portal/base.html" %}
-{% block title %}Search – {{ query }}{% endblock %}
+{% extends 'portal/base.html' %}
+
+{% block title %}Search Results for "{{ query }}" - ANU LMS{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-  <h3>Search results for “{{ query }}”</h3>
-  <p class="text-muted small">Scope: {{ scope }}</p>
-
-  {% if results %}
-    <div class="row g-3 mt-3">
-      {% for b in results %}
-        <div class="col-md-4">
-          <div class="card h-100">
-            {% if b.cover_image %}
-              <img src="{{ b.cover_image.url }}" class="card-img-top" alt="{{ b.title }}">
-            {% endif %}
-            <div class="card-body">
-              <h5 class="card-title">{{ b.title }}</h5>
-              <p class="card-text small text-muted">
-                {{ b.author }}<br>
-                {{ b.department.name|default:"" }}
-              </p>
-              <a href="{% url 'book_detail' b.id %}" class="btn btn-sm btn-primary">
-                View details
-              </a>
+<div class="container mt-4">
+    <h1>Search Results for "{{ query }}"</h1>
+    {% if results %}
+    <div class="row">
+        {% for book in results %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
+                {% else %}
+                    <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <span>No Image</span>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <p class="card-text">by {{ book.author }}</p>
+                    <p class="card-text"><small class="text-muted">Subject: {{ book.subject }}</small></p>
+                    <p class="card-text"><small class="text-muted">Department: {{ book.department.name|default:"N/A" }}</small></p>
+                    {% if book.available_copies > 0 %}
+                    <span class="badge bg-success">
+                        {{ book.available_copies }} Available
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger">
+                        {{ book.available_copies }} Available
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'book_detail' book.pk %}" class="btn btn-primary btn-sm mt-2">View Details</a>
+                    {% if user.is_authenticated and book.available_copies > 0 %}
+                        <a href="{% url 'request_book' book.pk %}" class="btn btn-success btn-sm mt-1">Request Book</a>
+                    {% endif %}
+                </div>
             </div>
-          </div>
         </div>
-      {% endfor %}
+        {% endfor %}
     </div>
-  {% else %}
-    <p class="mt-3">No results found.</p>
-  {% endif %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% else %}
+    <p class="mt-3">No results found for "{{ query }}".</p>
+    {% endif %}
 </div>
 {% endblock %}

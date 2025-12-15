@@ -1,0 +1,48 @@
+name,description,url,letter
+JSTOR,Academic journal archive for humanities and social sciences.,https://www.jstor.org/,J
+PubMed,Biomedical literature database.,https://pubmed.ncbi.nlm.nih.gov/,P
+IEEE Xplore,Engineering and technology research papers.,https://ieeexplore.ieee.org/,I
+ACM Digital Library,Computer science publications.,https://dl.acm.org/,A
+ScienceDirect,Scientific, technical, and medical research.,https://www.sciencedirect.com/,S
+SpringerLink,Books and journals in science, technology, and medicine.,https://link.springer.com/,S
+Wiley Online Library,Academic journals and books.,https://onlinelibrary.wiley.com/,W
+Taylor & Francis Online,Multidisciplinary academic journals.,https://www.tandfonline.com/,T
+Oxford Academic,Journals from Oxford University Press.,https://academic.oup.com/,O
+Cambridge Core,Books and journals from Cambridge University Press.,https://www.cambridge.org/core/,C
+EBSCOhost,Research databases and e-books.,https://www.ebscohost.com/,E
+ProQuest,Databases for research and learning.,https://www.proquest.com/,P
+Scopus,Citation and abstract database.,https://www.scopus.com/,S
+Web of Science,Multidisciplinary citation database.,https://clarivate.com/webofscience/,W
+Google Scholar,Free academic search engine.,https://scholar.google.com/,G
+ResearchGate,Professional network for researchers.,https://www.researchgate.net/,R
+Academia.edu,Platform for academics to share research.,https://www.academia.edu/,A
+SSRN,Social science research network.,https://www.ssrn.com/,S
+arXiv,Open-access preprint repository.,https://arxiv.org/,A
+BioRxiv,Biology preprint server.,https://www.biorxiv.org/,B
+ChemRxiv,Chemistry preprint server.,https://chemrxiv.org/,C
+medRxiv,Health sciences preprint server.,https://www.medrxiv.org/,M
+PhilPapers,Philosophy papers and resources.,https://philpapers.org/,P
+ERIC,Education resources information center.,https://eric.ed.gov/,E
+PsycINFO,Psychology database.,https://www.apa.org/pubs/databases/psycinfo/,P
+MathSciNet,Mathematics research database.,https://mathscinet.ams.org/,M
+Zentralblatt MATH,Mathematics abstracting service.,https://zbmath.org/,Z
+GeoRef,Geoscience database.,https://www.americangeosciences.org/georef/,G
+AstroData,Data and software for astronomers.,https://www.astropy.org/,A
+NASA ADS,Astronomy and physics abstracts.,https://ui.adsabs.harvard.edu/,N
+DOE PAGES,Department of Energy research.,https://www.osti.gov/pages/,D
+CERN Document Server,Physics research documents.,https://cds.cern.ch/,C
+LANL Preprints,Los Alamos National Laboratory preprints.,https://www.lanl.gov/,L
+MIT OpenCourseWare,Free course materials.,https://ocw.mit.edu/,M
+Khan Academy,Educational videos and exercises.,https://www.khanacademy.org/,K
+Coursera,Online courses from universities.,https://www.coursera.org/,C
+edX,Online courses and degrees.,https://www.edx.org/,E
+Udacity,Nanodegrees and courses.,https://www.udacity.com/,U
+Codecademy,Interactive coding lessons.,https://www.codecademy.com/,C
+LeetCode,Coding interview preparation.,https://leetcode.com/,L
+HackerRank,Coding challenges and interviews.,https://www.hackerrank.com/,H
+CodeChef,Programming contests.,https://www.codechef.com/,C
+TopCoder,Competitive programming.,https://www.topcoder.com/,T
+Project Gutenberg,Free e-books.,https://www.gutenberg.org/,P
+Open Library,Free books and texts.,https://openlibrary.org/,O
+Internet Archive,Free books, movies, and software.,https://archive.org/,I
+LibriVox,Free audiobooks.,https://librivox.org/,L

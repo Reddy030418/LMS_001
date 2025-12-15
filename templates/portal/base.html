@@ -409,10 +409,14 @@
       color: #fff;
     }
 
-  </style>
-
-</head>
-=======
+    /* Navbar styles */
+    .main-nav {
+      border-bottom: none !important;
+      border: none !important;
+    }
+    .navbar {
+      border: none !important;
+    }
 
   </style>
 
@@ -470,18 +474,19 @@
                 <h6 class="mega-title">Quick Access</h6>
                 <ul class="mega-links">
                   <li><a class="dropdown-item" href="{% url 'book_list' %}">All Books</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?type=subject">By Subject</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}">Trending Now</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?order=new">New Arrivals</a></li>
+                  <li><a class="dropdown-item" href="{% url 'advanced_search' %}">By Subject</a></li>
+                  <li><a class="dropdown-item" href="{% url 'trending_books' %}">Trending Now</a></li>
+                  <li><a class="dropdown-item" href="{% url 'new_arrivals' %}">New Arrivals</a></li>
+                  <li><a class="dropdown-item" href="{% url 'department_list' %}">Departments</a></li>
                 </ul>
               </div>
               <div class="mega-column">
                 <h6 class="mega-title">Special Collections</h6>
                 <ul class="mega-links">
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Rare">Rare Books</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Thesis">Theses & Dissertations</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Archive">ANU Archives</a></li>
-                  <li><a class="dropdown-item" href="{% url 'book_list' %}?subject=Digital">Digital Exhibits</a></li>
+                  <li><a class="dropdown-item" href="{% url 'rare_books' %}">Rare Books</a></li>
+                  <li><a class="dropdown-item" href="{% url 'theses_dissertations' %}">Theses & Dissertations</a></li>
+                  <li><a class="dropdown-item" href="{% url 'anu_archives' %}">ANU Archives</a></li>
+                  <li><a class="dropdown-item" href="{% url 'eresource_list' 'A' %}">Digital Exhibits</a></li>
                 </ul>
               </div>
               <!-- Right Column: Branches/Services -->
@@ -513,8 +518,8 @@
         <!-- Search and Auth Row -->
         <div class="d-flex justify-content-between align-items-center w-100">
           <!-- Search -->
-          <form class="d-flex flex-grow-1 me-3" method="get" action="{% url 'book_list' %}">
-            <select class="form-select form-select-sm search-select" name="type" aria-label="Search type">
+          <form id="search-form" class="d-flex flex-grow-1 me-3" method="get" action="{% url 'all_search' %}">
+            <select id="search-type" class="form-select form-select-sm search-select" name="type" aria-label="Search type">
               <option value="all">All</option>
               <option value="title">Title</option>
               <option value="author">Author</option>
@@ -614,8 +619,38 @@
       }
     }
 
-    // Mega Menu Toggle on Click Only
+    // Dynamic search form action
     document.addEventListener('DOMContentLoaded', function() {
+      const searchTypeSelect = document.getElementById('search-type');
+      const searchForm = document.getElementById('search-form');
+
+      if (searchTypeSelect && searchForm) {
+        searchTypeSelect.addEventListener('change', function() {
+          const type = this.value;
+          let actionUrl = '';
+
+          switch(type) {
+            case 'all':
+              actionUrl = "{% url 'all_search' %}";
+              break;
+            case 'title':
+              actionUrl = "{% url 'title_search' %}";
+              break;
+            case 'author':
+              actionUrl = "{% url 'author_search' %}";
+              break;
+            case 'subject':
+              actionUrl = "{% url 'subject_search' %}";
+              break;
+            default:
+              actionUrl = "{% url 'all_search' %}";
+          }
+
+          searchForm.action = actionUrl;
+        });
+      }
+
+      // Mega Menu Toggle on Click Only
       const browseToggle = document.getElementById('browseDropdown');
       const megaMenu = document.querySelector('.mega-menu');
 

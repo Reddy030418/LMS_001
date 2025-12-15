@@ -1,23 +1,36 @@
-# TODO: Fix Library Services Cards Navigation on Home Page
+# TODO: Performance Tuning & Optimization for ANU LMS
 
-The goal is to ensure clicks on the Library Services cards (Opening Hours, Ask a Librarian, Book a Study Room) reliably navigate to their respective pages (/opening-hours/, /ask-librarian/, /book-study-room/) without interference from JS or CSS. Current issues: Clicks not registering, likely due to event propagation or ripple effects in motion-effects.js.
+## Information Gathered
+- Current models (portal/models.py): Book (title, author, isbn, department, category, subject), Transaction (user, book, status, due_date, issued_on), Profile (role, department). No explicit db_index=True on frequent fields.
+- Views (portal/views.py): Queries in book_list, search_view (no select_related), my_books/student_dashboard (basic filters, no prefetch), admin_dashboard (aggregates good but can cache), recommender.py (multiple queries, no caching).
+- Pagination: Used in book_list/search (Paginator(12)), but ensure consistent.
+- Caching: Not implemented; use Django's LocMemCache for simplicity (no Redis dep).
+- Docker: Gunicorn single worker; update to 3 workers.
+- DB: PostgreSQL in Docker; indexes via model db_index (requires migration).
+- Bottlenecks: Search (icontains), dashboards (aggregates), recommendations (nested queries).
 
-## Steps:
+## Plan
+- [ ] Update models.py: Add db_index=True to Book (title, author, isbn, category, department), Transaction (user, book, status, due_date, issued_on), Profile (role, department).
+- [ ] Create and run migration for indexes: python manage.py makemigrations && python manage.py migrate.
+- [ ] Optimize views.py: Add select_related('book', 'user') in my_books, student_dashboard, history; prefetch_related in admin_dashboard; use .only('title', 'author') in searches; aggregate where possible.
+- [ ] Add caching: Configure LocMemCache in settings.py; cache dashboard stats (300s timeout) and recommendations (per user, 3600s).
+- [ ] Optimize recommender.py: Use select_related; cache results with user_id key.
+- [ ] Ensure pagination: Confirm Paginator(20) in book_list/search; add to department_list if missing.
+- [ ] Update docker-compose.yml: Gunicorn with --workers 3.
+- [ ] Update docs/documentation.md: Add optimization section (indexes, ORM, caching, viva points).
+- [ ] Local test: Runserver, check query performance (e.g., via Django debug toolbar if added, or manual timing); verify no N+1.
 
-- [x] Step 1: Read and verify templates/home.html - Confirmed <a> tags wrap entire cards with `display: block;`, `text-decoration: none;`, `color: inherit;`, `cursor: pointer;`, and `pointer-events: none;` on child divs (resource-icon, resource-text) to allow bubbling. The structure is correct for native navigation.
+## Dependent Files to be edited
+- portal/models.py (add db_index).
+- anu_lms/settings.py (CACHES config).
+- portal/views.py (optimize queries).
+- portal/services/recommender.py (caching, select_related).
+- docker-compose.yml (Gunicorn workers).
+- docs/documentation.md (add section).
+- Migrations: New migration file after models change.
 
-- [x] Step 2: Read static/js/motion-effects.js - Confirmed .resource-card is excluded from ripple effects (selector '.card:not(.resource-card)'). Cursor tracking applies to 'a' and '.card', but does not block clicks. No other listeners affect .resource-card. No edits needed.
-
-- [ ] Step 3: Launch browser to http://127.0.0.1:8000/, scroll down to Library Services section, and test click on Opening Hours card (coordinates approx. 200, 250) to see if it navigates.
-
-- [ ] Step 4: If click fails, edit static/js/motion-effects.js to disable all interactions on .resource-card (e.g., add condition to skip if target.closest('.resource-card')).
-
-- [ ] Step 5: Re-test in browser: Scroll, click all three cards, confirm navigation to detail pages (200 OK, content loads).
-
-- [ ] Step 6: Test edge cases: Click on icon/text specifically, keyboard navigation (tab to card, enter), mobile view (resize browser).
-
-- [ ] Step 7: Verify backend: Direct curl to endpoints (e.g., curl http://127.0.0.1:8000/opening-hours/) for 200 OK.
-
-- [ ] Step 8: Update this TODO.md with [x] for completed steps and remove unnecessary ones.
-
-Proceeding with Step 1 now.
+## Followup steps
+- [ ] Run local tests: python manage.py runserver; access dashboards/searches, check for faster loads (manual or with timeit).
+- [ ] Docker test: Once Docker installed, up --build, verify under load (e.g., multiple tabs).
+- [ ] Viva prep: Document query EXPLAIN examples (optional, via psql).
+- [ ] Mark complete; system now optimized for scale (5k+ books, 20k transactions).

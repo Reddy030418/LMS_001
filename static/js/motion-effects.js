@@ -22,6 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Helper to detect elements inside a <section>
+function isInsideSection(el) {
+    return !!(el && el.closest && el.closest('section'));
+}
+
 // Mouse Tracking and Highlighting (Reduced Motion)
 function initMouseTracking() {
     const cursor = document.createElement('div');
@@ -70,6 +75,11 @@ function initMouseTracking() {
     const interactiveElements = document.querySelectorAll('button, a:not(.resource-card), .card:not(.resource-card), .book-card, .btn');
 
     interactiveElements.forEach(el => {
+        // Skip interactive elements inside any <section> to remove cursor reactions
+        if (isInsideSection(el)) {
+            return;
+        }
+
         el.addEventListener('mouseenter', () => {
             cursor.style.transform = 'translate(-50%, -50%) scale(1.2)'; // Reduced from 1.5
             cursor.style.opacity = '0.8';
@@ -100,6 +110,10 @@ function initScrollAnimations() {
     // Observe elements for scroll animations
     const animateElements = document.querySelectorAll('.card, .book-card, .hero-card, .section-heading, .eresources-card');
     animateElements.forEach(el => {
+        // Skip any elements that are inside a <section> to remove animations
+        if (isInsideSection(el)) {
+            return;
+        }
         el.classList.add('fade-in');
         observer.observe(el);
     });
@@ -107,6 +121,10 @@ function initScrollAnimations() {
     // Stagger animations for book cards
     const bookCards = document.querySelectorAll('.book-card');
     bookCards.forEach((card, index) => {
+        // Skip book-cards inside any <section> to remove animations
+        if (isInsideSection(card)) {
+            return;
+        }
         card.style.animationDelay = `${index * 0.1}s`;
     });
 }
@@ -117,6 +135,11 @@ function initHoverEffects() {
     const bookCards = document.querySelectorAll('.book-card');
 
     bookCards.forEach(card => {
+        // Skip book-cards inside any <section> to remove cursor reactions
+        if (isInsideSection(card)) {
+            return;
+        }
+
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -141,6 +164,8 @@ function initHoverEffects() {
     const heroCards = document.querySelectorAll('.hero-card');
 
     heroCards.forEach(card => {
+        // Skip hero cards inside sections
+        if (isInsideSection(card)) return;
         card.addEventListener('mouseenter', () => {
             card.classList.add('glow');
         });
@@ -154,6 +179,8 @@ function initHoverEffects() {
     const buttons = document.querySelectorAll('.btn');
 
     buttons.forEach(btn => {
+        // Skip buttons inside sections
+        if (isInsideSection(btn)) return;
         btn.addEventListener('mouseenter', () => {
             btn.style.transform = 'translateY(-1px)'; // Reduced from -2px
         });
@@ -172,6 +199,8 @@ function initParallaxEffects() {
         const scrolled = window.pageYOffset;
 
         parallaxElements.forEach(el => {
+            // Skip parallax for elements inside <section>
+            if (isInsideSection(el)) return;
             const rate = el.dataset.parallax || 0.5;
             el.style.transform = `translateY(${scrolled * rate}px)`;
         });
@@ -180,8 +209,10 @@ function initParallaxEffects() {
     // Add parallax to hero section
     const heroSection = document.querySelector('.hero-wrapper');
     if (heroSection) {
-        heroSection.classList.add('parallax');
-        heroSection.dataset.parallax = '0.3';
+        if (!isInsideSection(heroSection)) {
+            heroSection.classList.add('parallax');
+            heroSection.dataset.parallax = '0.3';
+        }
     }
 }
 
@@ -190,6 +221,11 @@ function initMagneticElements() {
     const magneticElements = document.querySelectorAll('.magnetic, .btn');
 
     magneticElements.forEach(el => {
+        // Skip elements inside any <section> to remove cursor reactions
+        if (isInsideSection(el)) {
+            return;
+        }
+
         el.addEventListener('mousemove', (e) => {
             const rect = el.getBoundingClientRect();
             const x = e.clientX - rect.left - rect.width / 2;
@@ -210,6 +246,8 @@ function initRippleEffects() {
     const rippleElements = document.querySelectorAll('.ripple, .btn, .card:not(.resource-card)');
 
     rippleElements.forEach(el => {
+        // Skip ripple effects for elements inside <section>
+        if (isInsideSection(el)) return;
         el.addEventListener('click', (e) => {
             const ripple = document.createElement('div');
             ripple.className = 'ripple-effect';
@@ -270,6 +308,8 @@ function initMouseFollowEffects() {
 
     document.addEventListener('mousemove', (e) => {
         followElements.forEach(el => {
+            // Skip mouse-follow for elements inside <section>
+            if (isInsideSection(el)) return;
             const rect = el.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
