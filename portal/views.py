@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpRequest
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -8,6 +9,7 @@ from django.db.models.functions import TruncMonth
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django_ratelimit.decorators import ratelimit
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -20,7 +22,7 @@ from .utils import calculate_fine
 from .services.recommender import get_recommendations
 
 
-def home(request):
+def home(request: HttpRequest):
     """
     Display home page with book sections, hero search, e-resources, and news.
     """
@@ -32,13 +34,6 @@ def home(request):
     thriller_books = Book.objects.filter(subject__icontains='Thriller')[:8]
     recently_returned = Book.objects.order_by('-created_at')[:8]  # Proxy for recent returns
 
-    # E-resources (all for home)
-    letter = '0'
-    if letter == '0':
-        eresources = Eresource.objects.filter(letter__regex=r'^[^a-zA-Z]').order_by('name')
-    else:
-        eresources = Eresource.objects.filter(letter__iexact=letter).order_by('name')
-
     # News items
     news_items = NewsItem.objects.all()[:3]
 
@@ -49,15 +44,13 @@ def home(request):
         'recently_returned': recently_returned,
         'kids_books': kids_books,
         'thriller_books': thriller_books,
-        'eresources': eresources,
-        'letter': letter,
         'news_items': news_items,
         'is_home': True,
     }
     return render(request, 'portal/home.html', context)
 
 
-def login_view(request):
+def login_view(request: HttpRequest):
     if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
@@ -72,12 +65,12 @@ def login_view(request):
     return render(request, 'portal/login.html', {'form': form})
 
 
-def logout_view(request):
+def logout_view(request: HttpRequest):
     logout(request)
     return redirect('home')
 
 
-def signup_view(request):
+def signup_view(request: HttpRequest):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -91,7 +84,7 @@ def signup_view(request):
 
 
 @login_required
-def book_list(request):
+def book_list(request: HttpRequest):
     query = request.GET.get('q', '')
     book_type = request.GET.get('type', 'all')
     books = Book.objects.all().order_by('-created_at')
@@ -127,7 +120,7 @@ def book_list(request):
     return render(request, 'books/book_list.html', context)
 
 
-def book_detail(request, book_id):
+def book_detail(request: HttpRequest, book_id):
     book = get_object_or_404(Book, pk=book_id)
     can_request = (
         request.user.is_authenticated and
@@ -154,7 +147,7 @@ def book_detail(request, book_id):
 
 
 @login_required
-def my_books(request):
+def my_books(request: HttpRequest):
     active_loans = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book')
     history = Transaction.objects.filter(user=request.user, returned_on__isnull=False).order_by('-returned_on').select_related('book')
     recommendations = get_recommendations(request.user, limit=6)
@@ -167,7 +160,7 @@ def my_books(request):
 
 
 @login_required
-def student_dashboard(request):
+def student_dashboard(request: HttpRequest):
     if not hasattr(request.user, 'profile') or request.user.profile.role != 'student':
         return redirect('home')
 
@@ -193,7 +186,7 @@ def student_dashboard(request):
 
 
 @login_required
-def librarian_dashboard(request):
+def librarian_dashboard(request: HttpRequest):
     if not request.user.is_staff:
         return redirect('home')
 
@@ -218,7 +211,7 @@ def librarian_dashboard(request):
 
 
 @login_required
-def admin_dashboard(request):
+def admin_dashboard(request: HttpRequest):
     if not request.user.is_superuser:
         return redirect('home')
 
@@ -263,7 +256,7 @@ def admin_dashboard(request):
 
 # API Endpoints for Dashboards
 @login_required
-def dashboard_stats(request):
+def dashboard_stats(request: HttpRequest):
     if request.user.is_superuser:
         # Admin stats
         data = {
@@ -294,7 +287,7 @@ def dashboard_stats(request):
 
 
 @login_required
-def department_issues_api(request):
+def department_issues_api(request: HttpRequest):
     if not request.user.is_superuser:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     data = Transaction.objects.values('book__department__name').annotate(issue_count=Count('id')).order_by('-issue_count')
@@ -302,7 +295,7 @@ def department_issues_api(request):
 
 
 @login_required
-def monthly_trends_api(request):
+def monthly_trends_api(request: HttpRequest):
     if not request.user.is_superuser:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     data = Transaction.objects.annotate(month=TruncMonth('issued_on')).values('month').annotate(count=Count('id')).order_by('month')
@@ -310,7 +303,7 @@ def monthly_trends_api(request):
 
 
 @login_required
-def most_issued_books_api(request):
+def most_issued_books_api(request: HttpRequest):
     if not request.user.is_superuser:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     data = Transaction.objects.values('book__title').annotate(total_issues=Count('id')).order_by('-total_issues')[:10]
@@ -318,7 +311,7 @@ def most_issued_books_api(request):
 
 
 @login_required
-def overdue_books_api(request):
+def overdue_books_api(request: HttpRequest):
     if not (request.user.is_superuser or request.user.is_staff):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     data = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).select_related('book', 'user').values(
@@ -328,7 +321,7 @@ def overdue_books_api(request):
 
 
 @login_required
-def low_stock_books_api(request):
+def low_stock_books_api(request: HttpRequest):
     if not request.user.is_staff:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     data = Book.objects.filter(available_copies__lte=2).select_related('department').values(
@@ -338,7 +331,7 @@ def low_stock_books_api(request):
 
 
 @login_required
-def student_issued_api(request):
+def student_issued_api(request: HttpRequest):
     data = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book').values(
         'book__title', 'due_date', 'fine_amount'
     )
@@ -346,7 +339,7 @@ def student_issued_api(request):
 
 
 @login_required
-def student_history_api(request):
+def student_history_api(request: HttpRequest):
     data = Transaction.objects.filter(user=request.user).select_related('book').order_by('-issued_on').values(
         'book__title', 'issued_on', 'returned_on', 'fine_amount'
     )[:50]
@@ -354,7 +347,7 @@ def student_history_api(request):
 
 
 @login_required
-def request_book(request, book_id):
+def request_book(request: HttpRequest, book_id):
     book = get_object_or_404(Book, pk=book_id)
     if request.method == 'POST':
         form = BookRequestForm(request.POST)
@@ -373,7 +366,7 @@ def request_book(request, book_id):
 
 
 @login_required
-def issue_book(request):
+def issue_book(request: HttpRequest):
     if request.method == 'POST':
         form = IssueForm(request.POST)
         if form.is_valid():
@@ -391,12 +384,12 @@ def issue_book(request):
 
 
 @login_required
-def return_book(request, tx_id):
+def return_book(request: HttpRequest, tx_id):
     transaction = get_object_or_404(Transaction, pk=tx_id, user=request.user)
     if request.method == 'POST':
         returned_date = timezone.localdate()
         transaction.returned_on = returned_date
-        transaction.fine = calculate_fine(transaction.due_date, returned_date)
+        transaction.fine_amount = calculate_fine(transaction.due_date, returned_date)
         transaction.save()
         transaction.book.available_copies += 1
         transaction.book.save()
@@ -405,39 +398,10 @@ def return_book(request, tx_id):
     return render(request, 'portal/return_book.html', {'transaction': transaction})
 
 
-@user_passes_test(lambda u: u.is_staff)
-def admin_dashboard(request):
-    total_books = Book.objects.count()
-    total_users = Profile.objects.count()
-    overdue_transactions = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.localdate()).count()
-    active_loans = Transaction.objects.filter(returned_on__isnull=True).count()
-
-    # Issues per department
-    issues_per_dept = Transaction.objects.values('book__department__name').annotate(count=Count('id')).order_by('-count')
-    issues_data = {
-        'labels': [row['book__department__name'] or 'Unknown' for row in issues_per_dept],
-        'data': [row['count'] for row in issues_per_dept],
-    }
-
-    # Loans per department (active)
-    loans_per_dept = Transaction.objects.filter(returned_on__isnull=True).values('book__department__name').annotate(count=Count('id')).order_by('-count')
-    loans_data = {
-        'labels': [row['book__department__name'] or 'Unknown' for row in loans_per_dept],
-        'data': [row['count'] for row in loans_per_dept],
-    }
-
-    context = {
-        'total_books': total_books,
-        'total_members': total_users,
-        'active_loans': active_loans,
-        'overdue': overdue_transactions,
-        'issues_data': issues_data,
-        'loans_data': loans_data,
-    }
-    return render(request, 'portal/admin_dashboard.html', context)
 
 
-def export_transactions_csv(request):
+
+def export_transactions_csv(request: HttpRequest):
     start_date = request.GET.get('start')
     end_date = request.GET.get('end')
     transactions = Transaction.objects.select_related('user', 'book').all()
@@ -457,12 +421,12 @@ def export_transactions_csv(request):
             tx.issued_on,
             tx.due_date,
             tx.returned_on or 'Not Returned',
-            tx.fine or 0,
+            tx.fine_amount or 0,
         ])
     return response
 
 
-def export_transactions_pdf(request):
+def export_transactions_pdf(request: HttpRequest):
     start_date = request.GET.get('start')
     end_date = request.GET.get('end')
     transactions = Transaction.objects.select_related('user', 'book').all()
@@ -485,7 +449,7 @@ def export_transactions_pdf(request):
             str(tx.issued_on),
             str(tx.due_date),
             str(tx.returned_on or 'Not Returned'),
-            str(tx.fine or 0),
+            str(tx.fine_amount or 0),
         ])
     table = Table(data)
     table.setStyle(TableStyle([
@@ -503,7 +467,8 @@ def export_transactions_pdf(request):
     return response
 
 
-def search_suggestions(request):
+@ratelimit(key='ip', rate='10/m', method='GET')
+def search_suggestions(request: HttpRequest):
     query = request.GET.get('q', '')
     suggestions = Book.objects.filter(
         Q(title__istartswith=query) | Q(author__istartswith=query)
@@ -511,7 +476,7 @@ def search_suggestions(request):
     return JsonResponse(list(suggestions), safe=False)
 
 
-def search_view(request):
+def search_view(request: HttpRequest):
     query = request.GET.get('q', '')
     books = Book.objects.filter(
         Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
@@ -523,7 +488,7 @@ def search_view(request):
     return render(request, 'portal/search_results.html', context)
 
 
-def advanced_search_view(request):
+def advanced_search_view(request: HttpRequest):
     if request.method == 'GET':
         title = request.GET.get('title', '')
         author = request.GET.get('author', '')
@@ -565,7 +530,7 @@ def advanced_search_view(request):
 
 
 @login_required
-def my_requests(request):
+def my_requests(request: HttpRequest):
     requests = BookRequest.objects.filter(user=request.user).order_by('-created_at')
     context = {
         'requests': requests,
@@ -574,7 +539,7 @@ def my_requests(request):
 
 
 @user_passes_test(lambda u: u.is_staff)
-def manage_requests(request):
+def manage_requests(request: HttpRequest):
     requests = BookRequest.objects.filter(status='PENDING').order_by('created_at')
     if request.method == 'POST':
         request_id = request.POST.get('request_id')
@@ -606,7 +571,7 @@ def manage_requests(request):
     return render(request, 'portal/manage_requests.html', context)
 
 
-def eresource_list_view(request, letter):
+def eresource_list_view(request: HttpRequest, letter):
     """
     Display e-resources starting with the given letter.
     """
@@ -623,7 +588,7 @@ def eresource_list_view(request, letter):
     return render(request, 'portal/eresources_list.html', context)
 
 
-def contact(request):
+def contact(request: HttpRequest):
     """
     Display contact details for the library.
     """
@@ -639,7 +604,7 @@ def contact(request):
     return render(request, 'portal/contact.html', context)
 
 
-def opening_hours(request):
+def opening_hours(request: HttpRequest):
     """
     Display library opening hours for different branches.
     """
@@ -654,7 +619,7 @@ def opening_hours(request):
     return render(request, 'portal/opening_hours.html', context)
 
 
-def ask_librarian(request):
+def ask_librarian(request: HttpRequest):
     """
     Display a form for users to ask questions to the librarian.
     """
@@ -667,7 +632,7 @@ def ask_librarian(request):
     return render(request, 'portal/ask_librarian.html', {'title': 'Ask a Librarian'})
 
 
-def book_study_room(request):
+def book_study_room(request: HttpRequest):
     """
     Display information and form for booking a study room.
     """
@@ -680,7 +645,7 @@ def book_study_room(request):
     return render(request, 'portal/book_study_room.html', {'title': 'Book a Study Room'})
 
 
-def news(request):
+def news(request: HttpRequest):
     """
     Display news and events page.
     """
@@ -692,7 +657,7 @@ def news(request):
     return render(request, 'portal/news.html', context)
 
 
-def department_list(request):
+def department_list(request: HttpRequest):
     """
     Display list of all active departments with book statistics and search.
     """
@@ -721,7 +686,7 @@ def department_list(request):
     return render(request, 'portal/department_list.html', context)
 
 
-def department_books(request, dept_id):
+def department_books(request: HttpRequest, dept_id):
     """
     Display books for a specific department.
     """
@@ -740,89 +705,62 @@ def department_books(request, dept_id):
     return render(request, 'books/book_list.html', context)
 
 
-def all_search(request):
+def advanced_search(request: HttpRequest):
     """
-    Search books by all fields (title, author, subject).
+    Advanced search for books by title, author, subject, department, category, and availability.
+    Combines all previous search functions into one.
     """
-    query = request.GET.get('q', '')
-    if query:
-        books = Book.objects.filter(
-            Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
-        ).order_by('-created_at')
-    else:
-        books = Book.objects.none()
+    title = request.GET.get('title', '')
+    author = request.GET.get('author', '')
+    subject = request.GET.get('subject', '')
+    department_name = request.GET.get('department', '')
+    category_name = request.GET.get('category', '')
+    availability = request.GET.get('availability', '')
+
+    books = Book.objects.all()
+
+    if title:
+        books = books.filter(title__icontains=title)
+    if author:
+        books = books.filter(author__icontains=author)
+    if subject:
+        books = books.filter(subject__icontains=subject)
+    if department_name:
+        books = books.filter(department__name__icontains=department_name)
+    if category_name:
+        books = books.filter(category__name__icontains=category_name)
+    if availability == 'available':
+        books = books.filter(available_copies__gt=0)
+    elif availability == 'issued':
+        books = books.filter(available_copies=0)
+
+    books = books.order_by('-created_at')
+
     paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    departments = Department.objects.all()
+    authors = Book.objects.values_list('author', flat=True).distinct()
+    categories = Book.objects.values_list('category__name', flat=True).distinct()
+
     context = {
         'page_obj': page_obj,
-        'query': query,
-        'title': f'Search Results for "{query}"'
+        'title': title,
+        'author': author,
+        'subject': subject,
+        'department_name': department_name,
+        'category_name': category_name,
+        'availability': availability,
+        'departments': departments,
+        'authors': authors,
+        'categories': categories,
+        'query': title or author or subject or department_name or category_name,  # For backward compatibility
     }
     return render(request, 'books/book_list.html', context)
 
 
-def title_search(request):
-    """
-    Search books by title.
-    """
-    query = request.GET.get('q', '')
-    if query:
-        books = Book.objects.filter(title__icontains=query).order_by('-created_at')
-    else:
-        books = Book.objects.none()
-    paginator = Paginator(books, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj,
-        'query': query,
-        'title': f'Title Search: "{query}"'
-    }
-    return render(request, 'books/book_list.html', context)
-
-
-def author_search(request):
-    """
-    Search books by author.
-    """
-    query = request.GET.get('q', '')
-    if query:
-        books = Book.objects.filter(author__icontains=query).order_by('-created_at')
-    else:
-        books = Book.objects.none()
-    paginator = Paginator(books, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj,
-        'query': query,
-        'title': f'Author Search: "{query}"'
-    }
-    return render(request, 'books/book_list.html', context)
-
-
-def subject_search(request):
-    """
-    Search books by subject.
-    """
-    query = request.GET.get('q', '')
-    if query:
-        books = Book.objects.filter(subject__icontains=query).order_by('-created_at')
-    else:
-        books = Book.objects.none()
-    paginator = Paginator(books, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj,
-        'query': query,
-        'title': f'Subject Search: "{query}"'
-    }
-    return render(request, 'books/book_list.html', context)
-
-
-def trending_books(request):
+def trending_books(request: HttpRequest):
     """
     Display trending books page.
     """
@@ -838,7 +776,7 @@ def trending_books(request):
     return render(request, 'books/book_list.html', context)
 
 
-def new_arrivals(request):
+def new_arrivals(request: HttpRequest):
     """
     Display new arrivals page.
     """
@@ -854,7 +792,7 @@ def new_arrivals(request):
     return render(request, 'books/book_list.html', context)
 
 
-def rare_books(request):
+def rare_books(request: HttpRequest):
     """
     Display rare books page.
     """
@@ -870,7 +808,7 @@ def rare_books(request):
     return render(request, 'books/book_list.html', context)
 
 
-def theses_dissertations(request):
+def theses_dissertations(request: HttpRequest):
     """
     Display theses and dissertations page.
     """
@@ -886,7 +824,7 @@ def theses_dissertations(request):
     return render(request, 'books/book_list.html', context)
 
 
-def anu_archives(request):
+def anu_archives(request: HttpRequest):
     """
     Display ANU archives page.
     """

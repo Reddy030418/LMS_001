@@ -1,7 +1,12 @@
 from django.db.models import Count
+from django.core.cache import cache
 from portal.models import Transaction, Book, Profile
 
 def get_recommendations(user, limit=10):
+    cache_key = f"recommendations_{user.id}"
+    recommendations = cache.get(cache_key)
+    if recommendations is not None:
+        return recommendations
     """
     Get personalized book recommendations using layered approach:
     - Content-based: Similar department, subject, category
@@ -44,6 +49,12 @@ def get_recommendations(user, limit=10):
     popular_books = Book.objects.exclude(id__in=borrowed_ids).annotate(issue_count=Count('transaction')).order_by('-issue_count')[:20]
     for book in popular_books:
         scores[book.id] = scores.get(book.id, 0) + book.issue_count * 0.2 / 10  # Normalized weight
+
+    # Layer 4: Department Popularity
+    if dept:
+        dept_popular_books = Book.objects.filter(department=dept).exclude(id__in=borrowed_ids).annotate(issue_count=Count('transaction')).order_by('-issue_count')[:10]
+        for book in dept_popular_books:
+            scores[book.id] = scores.get(book.id, 0) + book.issue_count * 0.1  # Weighted for department popularity
 
     # Rank and return top books
     if scores:

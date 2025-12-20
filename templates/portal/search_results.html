@@ -2,8 +2,17 @@
 
 {% block title %}Search Results for "{{ query }}" - ANU LMS{% endblock %}
 
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Search Results for "{{ query }}"</li>
+  </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4 search-results">
     <h1>Search Results for "{{ query }}"</h1>
     {% if results %}
     <div class="row">

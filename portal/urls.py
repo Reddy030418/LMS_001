@@ -35,10 +35,7 @@ urlpatterns = [
     path('rare-books/', views.rare_books, name='rare_books'),
     path('theses-dissertations/', views.theses_dissertations, name='theses_dissertations'),
     path('anu-archives/', views.anu_archives, name='anu_archives'),
-    path('all-search/', views.all_search, name='all_search'),
-    path('title-search/', views.title_search, name='title_search'),
-    path('author-search/', views.author_search, name='author_search'),
-    path('subject-search/', views.subject_search, name='subject_search'),
+
     # API Endpoints
     path('api/dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
     path('api/department-issues/', views.department_issues_api, name='department_issues_api'),
