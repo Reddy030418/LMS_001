@@ -1,0 +1,354 @@
+version: "2"
+type: backend
+tech_stack:
+  - Python
+  - Django 4.2.7
+  - SQLite (development)
+  - PostgreSQL (production via psycopg2)
+  - Celery
+  - Redis
+  - ReportLab
+features:
+  - name: Authentication
+    description: User registration, login, logout, profile management, and password change
+    files:
+      - accounts/views.py
+      - accounts/urls.py
+      - accounts/models.py
+      - portal/views.py
+    endpoints:
+      - method: GET
+        path: /accounts/login/
+        description: Render login page
+        auth_required: false
+        response_schema:
+          "200": HTML login page
+      - method: POST
+        path: /accounts/login/
+        description: Authenticate user and create session
+        auth_required: false
+        request_schema:
+          body:
+            username: string
+            password: string
+        response_schema:
+          "302": Redirect on success
+          "200": Login page with errors
+      - method: GET
+        path: /accounts/logout/
+        description: Log out the current user
+        auth_required: true
+        response_schema:
+          "302": Redirect to login
+      - method: GET
+        path: /accounts/register/
+        description: Render registration page
+        auth_required: false
+        response_schema:
+          "200": HTML registration page
+      - method: POST
+        path: /accounts/register/
+        description: Register a new user
+        auth_required: false
+        request_schema:
+          body:
+            username: string
+            email: string
+            password1: string
+            password2: string
+        response_schema:
+          "302": Redirect on success
+          "200": Registration page with errors
+      - method: GET
+        path: /accounts/profile/
+        description: View user profile
+        auth_required: true
+        response_schema:
+          "200": HTML profile page
+      - method: POST
+        path: /accounts/change-password/
+        description: Change user password
+        auth_required: true
+        request_schema:
+          body:
+            old_password: string
+            new_password1: string
+            new_password2: string
+        response_schema:
+          "302": Redirect on success
+          "200": Form with errors
+
+  - name: Book Management
+    description: Browse, search, and manage books in the library
+    files:
+      - portal/views.py
+      - portal/urls.py
+      - books/models.py
+    endpoints:
+      - method: GET
+        path: /books/
+        description: List all books
+        auth_required: false
+        response_schema:
+          "200": HTML book list page
+      - method: GET
+        path: /books/<int:book_id>/
+        description: Get details for a specific book
+        auth_required: false
+        response_schema:
+          "200": HTML book detail page
+          "404": Not found
+      - method: GET
+        path: /my-books/
+        description: List books currently issued to logged-in student
+        auth_required: true
+        response_schema:
+          "200": HTML my books page
+      - method: GET
+        path: /search/
+        description: Search books by keyword
+        auth_required: false
+        response_schema:
+          "200": HTML search results page
+      - method: GET
+        path: /advanced-search/
+        description: Search books by multiple filters
+        auth_required: false
+        response_schema:
+          "200": HTML advanced search results page
+      - method: GET
+        path: /search-suggestions/
+        description: Autocomplete suggestions for book search
+        auth_required: false
+        response_schema:
+          "200": JSON array of suggestions
+      - method: GET
+        path: /trending-books/
+        description: List trending books
+        auth_required: false
+        response_schema:
+          "200": HTML trending books page
+      - method: GET
+        path: /new-arrivals/
+        description: List recently added books
+        auth_required: false
+        response_schema:
+          "200": HTML new arrivals page
+      - method: GET
+        path: /rare-books/
+        description: List rare/special books
+        auth_required: false
+        response_schema:
+          "200": HTML rare books page
+      - method: GET
+        path: /theses-dissertations/
+        description: List theses and dissertations
+        auth_required: false
+        response_schema:
+          "200": HTML theses page
+      - method: GET
+        path: /anu-archives/
+        description: List ANU archives
+        auth_required: false
+        response_schema:
+          "200": HTML archives page
+
+  - name: Book Transactions
+    description: Request, issue, and return books; export transaction reports
+    files:
+      - portal/views.py
+      - portal/urls.py
+      - transactions/models.py
+    endpoints:
+      - method: POST
+        path: /request-book/<int:book_id>/
+        description: Student requests a book
+        auth_required: true
+        request_schema:
+          body: {}
+        response_schema:
+          "302": Redirect with success message
+          "200": Form with error
+      - method: POST
+        path: /issue-book/
+        description: Librarian issues a book to a student
+        auth_required: true
+        request_schema:
+          body:
+            student_id: string
+            book_id: integer
+        response_schema:
+          "302": Redirect on success
+          "200": Form with error
+      - method: POST
+        path: /return-book/<int:tx_id>/
+        description: Librarian marks a book as returned
+        auth_required: true
+        request_schema:
+          body: {}
+        response_schema:
+          "302": Redirect on success
+          "404": Transaction not found
+      - method: GET
+        path: /my-requests/
+        description: Student views their book requests
+        auth_required: true
+        response_schema:
+          "200": HTML requests page
+      - method: GET
+        path: /manage-requests/
+        description: Librarian manages all book requests
+        auth_required: true
+        response_schema:
+          "200": HTML manage requests page
+      - method: GET
+        path: /export-transactions-csv/
+        description: Export transaction data as CSV
+        auth_required: true
+        response_schema:
+          "200": CSV file download
+      - method: GET
+        path: /export-transactions-pdf/
+        description: Export transaction data as PDF
+        auth_required: true
+        response_schema:
+          "200": PDF file download
+
+  - name: Dashboard API
+    description: JSON API endpoints for dashboard statistics and charts
+    files:
+      - portal/views.py
+      - portal/api_dashboard.py
+      - portal/api_urls.py
+    endpoints:
+      - method: GET
+        path: /api/dashboard/stats/
+        description: Get overall library statistics
+        auth_required: true
+        response_schema:
+          "200": JSON with total_books, issued_books, overdue_books, students
+      - method: GET
+        path: /api/department-issues/
+        description: Books issued by department
+        auth_required: true
+        response_schema:
+          "200": JSON array of department issue counts
+      - method: GET
+        path: /api/monthly-trends/
+        description: Monthly book issue trends
+        auth_required: true
+        response_schema:
+          "200": JSON array of monthly data
+      - method: GET
+        path: /api/most-issued-books/
+        description: Most frequently issued books
+        auth_required: true
+        response_schema:
+          "200": JSON array of books with issue counts
+      - method: GET
+        path: /api/overdue-books/
+        description: List of overdue books
+        auth_required: true
+        response_schema:
+          "200": JSON array of overdue transaction records
+      - method: GET
+        path: /api/low-stock-books/
+        description: Books with low available copies
+        auth_required: true
+        response_schema:
+          "200": JSON array of low-stock books
+      - method: GET
+        path: /api/student-issued/
+        description: Books currently issued to the logged-in student
+        auth_required: true
+        response_schema:
+          "200": JSON array of issued books
+      - method: GET
+        path: /api/student-history/
+        description: Transaction history for the logged-in student
+        auth_required: true
+        response_schema:
+          "200": JSON array of historical transactions
+
+  - name: Departmental and E-Resources
+    description: Browse library resources by department and e-resources by letter
+    files:
+      - portal/views.py
+      - portal/urls.py
+    endpoints:
+      - method: GET
+        path: /departments/
+        description: List all academic departments
+        auth_required: false
+        response_schema:
+          "200": HTML departments page
+      - method: GET
+        path: /departments/<int:dept_id>/books/
+        description: List books for a specific department
+        auth_required: false
+        response_schema:
+          "200": HTML department books page
+          "404": Department not found
+      - method: GET
+        path: /eresources/<str:letter>/
+        description: List e-resources starting with a given letter
+        auth_required: false
+        response_schema:
+          "200": HTML e-resources page
+
+  - name: Library Services
+    description: Student and staff services like study room booking, ask librarian, news, and contact
+    files:
+      - portal/views.py
+      - portal/urls.py
+    endpoints:
+      - method: GET
+        path: /contact/
+        description: Contact page
+        auth_required: false
+        response_schema:
+          "200": HTML contact page
+      - method: GET
+        path: /opening-hours/
+        description: Library opening hours
+        auth_required: false
+        response_schema:
+          "200": HTML opening hours page
+      - method: POST
+        path: /ask-librarian/
+        description: Submit a query to the librarian
+        auth_required: false
+        request_schema:
+          body:
+            name: string
+            email: string
+            message: string
+        response_schema:
+          "302": Redirect on success
+          "200": Form with errors
+      - method: POST
+        path: /book-study-room/
+        description: Book a study room
+        auth_required: true
+        request_schema:
+          body:
+            room_id: integer
+            date: string
+            time_slot: string
+        response_schema:
+          "302": Redirect on success
+          "200": Form with errors
+      - method: GET
+        path: /news/
+        description: Library news and announcements
+        auth_required: false
+        response_schema:
+          "200": HTML news page
+
+known_limitations:
+  - issue: Session-based authentication used; no token-based API auth
+    location: portal/views.py
+    impact: API endpoints require browser session cookies for auth
+  - issue: SQLite used in development; may differ from production PostgreSQL behavior
+    location: anu_lms/settings.py
+    impact: Minor query behavior differences between environments

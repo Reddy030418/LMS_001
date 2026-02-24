@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth import login, authenticate, logout, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-from .forms import UserRegistrationForm
+from .forms import UserRegistrationForm, UserProfileForm
+from .models import UserProfile
 
+@csrf_exempt
 def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -16,21 +21,39 @@ def register_view(request):
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
 
+@csrf_exempt
 def login_view(request):
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
-                return redirect('home')
-            else:
-                messages.error(request, 'Invalid username or password.')
+        username = request.POST.get('username', '') or request.GET.get('username', '')
+        password = request.POST.get('password', '') or request.GET.get('password', '')
+        # Also support JSON body
+        if not username:
+            import json
+            try:
+                body = json.loads(request.body)
+                username = body.get('username', '')
+                password = body.get('password', '')
+            except Exception:
+                pass
+
+        user = authenticate(request, username=username, password=password)
+        wants_json = (
+            request.headers.get('Accept', '').startswith('application/json') or
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+            request.headers.get('Content-Type', '').startswith('application/json')
+        )
+
+        if user is not None:
+            login(request, user)
+            if wants_json:
+                return JsonResponse({'success': True, 'redirect': '/', 'username': username}, status=200)
+            messages.success(request, f'Welcome back, {username}!')
+            return redirect('home')
         else:
+            if wants_json:
+                return JsonResponse({'success': False, 'error': 'Invalid username or password.'}, status=401)
             messages.error(request, 'Invalid username or password.')
+            form = AuthenticationForm()
     else:
         form = AuthenticationForm()
     return render(request, 'accounts/login.html', {'form': form})

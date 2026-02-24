@@ -1,0 +1,32 @@
+[
+  {
+    "id": "TC001",
+    "title": "authentication login post with valid and invalid credentials",
+    "description": "Test POST /accounts/login/. Send header Accept: application/json. Valid: username='admin' password='adminpass' — expect HTTP 200 JSON with success=true. Invalid: username='baduser' password='badpass' — expect HTTP 401 JSON with success=false."
+  },
+  {
+    "id": "TC002",
+    "title": "book management get book detail valid and invalid id",
+    "description": "GET /books/ (public, no auth) expect 200. Use re.findall(r'href=[\"\\']/books/(\\d+)/', html) to get book_id. GET /books/<valid_id>/ expect 200 HTML. GET /books/999999999/ expect 404. Use only 'requests' and 're'."
+  },
+  {
+    "id": "TC003",
+    "title": "book transactions post request book with and without authentication",
+    "description": "Use only 'requests' and 're'. Step 1: GET /books/ public, regex r'href=[\"\\']/books/(\\d+)/' for book_id. Step 2: POST /accounts/login/ with headers={'Accept':'application/json'}, data username='admin' password='adminpass', expect 200 JSON assert json()['success']==True. Step 3: POST /request-book/<book_id>/ same session expect 200 or 302. Step 4: new session POST /request-book/<book_id>/ expect 401 (unauthenticated returns 401 JSON)."
+  },
+  {
+    "id": "TC004",
+    "title": "dashboard api get overall library statistics with and without authentication",
+    "description": "Step 1: POST /accounts/login/ headers={'Accept':'application/json'} data username='admin' password='adminpass' expect 200 JSON success=true. Step 2: GET /api/dashboard/stats/ auth session expect 200 JSON keys total_books, issued_books, overdue_books, students. Step 3: new unauthenticated session GET /api/dashboard/stats/ expect 401 JSON (not 302)."
+  },
+  {
+    "id": "TC005",
+    "title": "departmental browse get department books valid and invalid department",
+    "description": "GET /departments/ (no auth) expect 200. Use re.findall(r'href=[\"\\']/departments/(\\d+)/books/', html) for dept_id. GET /departments/<dept_id>/books/ expect 200. GET /departments/999999999/books/ expect 404."
+  },
+  {
+    "id": "TC006",
+    "title": "library services post ask librarian with valid and invalid data",
+    "description": "IMPORTANT: The /ask-librarian/ endpoint returns JSON when Accept header is application/json — NOT 302 redirect. Valid POST: send headers={'Accept':'application/json','Content-Type':'application/x-www-form-urlencoded'}, data name='Test User' email='testuser@example.com' message='I need help.' — expect HTTP 200 JSON {success: true}. Assert response.status_code == 200 and response.json()['success'] == True. Invalid (separate requests same headers): name='' expect 400 JSON {success: false}; email='' expect 400; email='not-an-email' expect 400; message='' expect 400. Use only 'requests'."
+  }
+]

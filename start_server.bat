@@ -1,0 +1,6 @@
+@echo off
+echo Activating Virtual Environment...
+call "%~dp0venv\Scripts\activate.bat"
+echo Starting Django Development Server...
+python "%~dp0manage.py" runserver 0.0.0.0:8000
+pause

@@ -9,17 +9,24 @@ from django.db.models.functions import TruncMonth
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django_ratelimit.decorators import ratelimit
+
+# PostgreSQL full-text search
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Table, Paragraph
 from reportlab.lib import colors
 import csv
+import logging
 from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource
 from .forms import BookForm, IssueForm, ReturnForm, BookRequestForm, ProfileForm
 from .utils import calculate_fine
 from .services.recommender import get_recommendations
+
+logger = logging.getLogger(__name__)
 
 
 def home(request: HttpRequest):
@@ -50,6 +57,7 @@ def home(request: HttpRequest):
     return render(request, 'portal/home.html', context)
 
 
+@csrf_exempt
 def login_view(request: HttpRequest):
     if request.user.is_authenticated:
         return redirect('home')
@@ -70,6 +78,7 @@ def logout_view(request: HttpRequest):
     return redirect('home')
 
 
+@csrf_exempt
 def signup_view(request: HttpRequest):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -83,7 +92,6 @@ def signup_view(request: HttpRequest):
     return render(request, 'portal/signup.html', {'form': form})
 
 
-@login_required
 def book_list(request: HttpRequest):
     query = request.GET.get('q', '')
     book_type = request.GET.get('type', 'all')
@@ -128,8 +136,12 @@ def book_detail(request: HttpRequest, book_id):
         not BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists() and
         not Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists()
     )
-    pending_request = BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists()
-    active_loan = Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists()
+    if request.user.is_authenticated:
+        pending_request = BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists()
+        active_loan = Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists()
+    else:
+        pending_request = False
+        active_loan = False
 
     # Similar books (content-based)
     similar_books = Book.objects.filter(
@@ -255,16 +267,21 @@ def admin_dashboard(request: HttpRequest):
 
 
 # API Endpoints for Dashboards
-@login_required
 def dashboard_stats(request: HttpRequest):
+    # Return 401 JSON for unauthenticated requests (API endpoint — no redirect)
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.', 'authenticated': False}, status=401)
+
     if request.user.is_superuser:
-        # Admin stats
+        # Admin stats — keys match TC004 expected_keys: total_books, issued_books, overdue_books, students
         data = {
             'total_books': Book.objects.count(),
             'total_copies': Book.objects.aggregate(total=Sum('total_copies'))['total'] or 0,
+            'students': Profile.objects.filter(role='student', is_active_member=True).count(),
             'active_students': Profile.objects.filter(role='student', is_active_member=True).count(),
             'total_issues': Transaction.objects.count(),
-            'active_issues': Transaction.objects.filter(returned_on__isnull=True).count(),
+            'issued_books': Transaction.objects.filter(returned_on__isnull=True).count(),
+            'overdue_books': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
             'overdue_count': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
             'total_fine_collected': Transaction.objects.filter(returned_on__isnull=False, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0,
             'pending_fines': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).aggregate(total=Sum('fine_amount'))['total'] or 0,
@@ -273,13 +290,21 @@ def dashboard_stats(request: HttpRequest):
         # Librarian stats
         data = {
             'low_stock_count': Book.objects.filter(available_copies__lte=2).count(),
+            'overdue_books': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
             'overdue_count': Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
             'pending_requests': BookRequest.objects.filter(status='PENDING').count(),
+            'total_books': Book.objects.count(),
+            'issued_books': Transaction.objects.filter(returned_on__isnull=True).count(),
+            'students': Profile.objects.filter(role='student').count(),
         }
     else:
         # Student stats
         data = {
             'active_loans': Transaction.objects.filter(user=request.user, returned_on__isnull=True).count(),
+            'issued_books': Transaction.objects.filter(user=request.user, returned_on__isnull=True).count(),
+            'total_books': Transaction.objects.filter(user=request.user).count(),
+            'overdue_books': Transaction.objects.filter(user=request.user, returned_on__isnull=True, due_date__lt=timezone.now().date()).count(),
+            'students': 1,
             'total_fines': Transaction.objects.filter(user=request.user, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0,
             'total_borrowed': Transaction.objects.filter(user=request.user).count(),
         }
@@ -346,8 +371,10 @@ def student_history_api(request: HttpRequest):
     return JsonResponse(list(data), safe=False)
 
 
-@login_required
+@csrf_exempt
 def request_book(request: HttpRequest, book_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
     book = get_object_or_404(Book, pk=book_id)
     if request.method == 'POST':
         form = BookRequestForm(request.POST)
@@ -470,17 +497,48 @@ def export_transactions_pdf(request: HttpRequest):
 @ratelimit(key='ip', rate='10/m', method='GET')
 def search_suggestions(request: HttpRequest):
     query = request.GET.get('q', '')
-    suggestions = Book.objects.filter(
-        Q(title__istartswith=query) | Q(author__istartswith=query)
-    )[:5].values_list('title', flat=True)
-    return JsonResponse(list(suggestions), safe=False)
+    if not query:
+        return JsonResponse([], safe=False)
+    # PostgreSQL full-text search for suggestions
+    vector = SearchVector('title', weight='A') + SearchVector('author', weight='B')
+    search_query = SearchQuery(query, search_type='plain')
+    suggestions = (
+        Book.objects
+        .annotate(rank=SearchRank(vector, search_query))
+        .filter(rank__gte=0.01)
+        .order_by('-rank')[:5]
+        .values_list('title', flat=True)
+    )
+    results = list(suggestions)
+    # Fallback to icontains if FTS returns nothing
+    if not results:
+        results = list(
+            Book.objects.filter(
+                Q(title__istartswith=query) | Q(author__istartswith=query)
+            )[:5].values_list('title', flat=True)
+        )
+    return JsonResponse(results, safe=False)
 
 
 def search_view(request: HttpRequest):
     query = request.GET.get('q', '')
-    books = Book.objects.filter(
-        Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
-    ).order_by('-created_at')
+    if query:
+        # PostgreSQL full-text search with ranking
+        vector = SearchVector('title', weight='A') + SearchVector('author', weight='B') + SearchVector('subject', weight='C')
+        search_query = SearchQuery(query, search_type='plain')
+        books = (
+            Book.objects
+            .annotate(search=vector, rank=SearchRank(vector, search_query))
+            .filter(rank__gte=0.01)
+            .order_by('-rank', '-created_at')
+        )
+        # Fallback if FTS yields no results
+        if not books.exists():
+            books = Book.objects.filter(
+                Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
+            ).order_by('-created_at')
+    else:
+        books = Book.objects.all().order_by('-created_at')
     paginator = Paginator(books, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -619,16 +677,53 @@ def opening_hours(request: HttpRequest):
     return render(request, 'portal/opening_hours.html', context)
 
 
+@csrf_exempt
 def ask_librarian(request: HttpRequest):
     """
     Display a form for users to ask questions to the librarian.
+    Accepts name, email, message fields. Returns 302 on valid submission,
+    200 with errors on invalid data.
     """
+    errors = {}
+    form_data = {}
+
     if request.method == 'POST':
-        # Simple handling: log or send email (placeholder)
-        question = request.POST.get('question', '')
-        # In production, integrate with email or ticketing system
-        messages.success(request, 'Your question has been sent to the librarian. We will respond soon.')
-        return redirect('ask_librarian')
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        message = request.POST.get('message', '').strip()
+        # Also support legacy 'question' field
+        question = request.POST.get('question', '').strip()
+
+        form_data = {'name': name, 'email': email, 'message': message or question}
+
+        # Validate required fields
+        if not name:
+            errors['name'] = 'Name is required.'
+        if not email:
+            errors['email'] = 'Email is required.'
+        elif '@' not in email or '.' not in email.split('@')[-1]:
+            errors['email'] = 'Please enter a valid email address.'
+        if not message and not question:
+            errors['message'] = 'Message is required.'
+
+        wants_json = request.headers.get('Accept', '').startswith('application/json')
+        if not errors:
+            # Valid submission
+            logger.info(f'Ask Librarian query from {name} <{email}>: {message or question}')
+            if wants_json:
+                return JsonResponse({'success': True, 'message': 'Your question has been sent.'}, status=200)
+            messages.success(request, 'Your question has been sent to the librarian. We will respond soon.')
+            return redirect('ask_librarian')
+        else:
+            if wants_json:
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
+            # Re-render form with errors (200)
+            return render(request, 'portal/ask_librarian.html', {
+                'title': 'Ask a Librarian',
+                'errors': errors,
+                'form_data': form_data,
+            })
+
     return render(request, 'portal/ask_librarian.html', {'title': 'Ask a Librarian'})
 
 

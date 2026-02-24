@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8000",
+  "backendAuthType": "basic token",
+  "backendUsername": "anuadmin",
+  "backendPassword": "admin123",
+  "executionArgs": {
+    "projectName": "LMS_001",
+    "projectPath": "c:\\Users\\satya\\Desktop\\SANJU\\LMS_001",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-GTOucaRlHqK8c5y2iA_QQxYAXMW5MbnMZFReUph1HWbS6VSQjX82yACv4aPoxlEtAR4FMvYg0qs5vuaX2QJHn7PCczNkwXzLRRsXsE-6hPorWa-p02qfk1kR4gLr7_ATTXw"
+    }
+  },
+  "serverPort": 54187,
+  "proxy": "http://861585f7-8de8-4745-a444-a365b642b3da:wcNle98j8qawV7lNJ7UrPZk7wNzkqBlS@tun.testsprite.com:8080"
+}

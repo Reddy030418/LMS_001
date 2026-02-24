@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,16 +9,10 @@
   <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
 
   <!-- Bootstrap 5 -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
   <!-- Icons -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -67,6 +62,7 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
         sans-serif;
@@ -105,6 +101,7 @@
       pointer-events: none;
       z-index: 0;
     }
+
     .bg-blob.blob1 {
       width: 420px;
       height: 420px;
@@ -113,6 +110,7 @@
       left: -120px;
       animation: float1 22s ease-in-out infinite alternate;
     }
+
     .bg-blob.blob2 {
       width: 460px;
       height: 460px;
@@ -124,12 +122,23 @@
 
 
     @keyframes float1 {
-      0% { transform: translate3d(0,0,0); }
-      100% { transform: translate3d(80px, 40px,0); }
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      100% {
+        transform: translate3d(80px, 40px, 0);
+      }
     }
+
     @keyframes float2 {
-      0% { transform: translate3d(0,0,0); }
-      100% { transform: translate3d(-60px,-40px,0); }
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      100% {
+        transform: translate3d(-60px, -40px, 0);
+      }
     }
 
 
@@ -152,13 +161,17 @@
     .content-header {
       margin-bottom: 24px;
     }
+
     .content-header h1 {
       font-size: 2rem;
       letter-spacing: 0.02em;
     }
+
     .content-header h1 span {
-      color: #b45309; /* gold-ish */
+      color: #b45309;
+      /* gold-ish */
     }
+
     .content-header p {
       margin-top: 4px;
       color: #4b5563;
@@ -194,9 +207,11 @@
       .hero-row {
         flex-wrap: wrap;
       }
+
       .hero-main-title {
         font-size: 2rem;
       }
+
       .hero-subtitle {
         font-size: 0.9rem;
       }
@@ -206,21 +221,26 @@
       .hero-main-title {
         font-size: 1.75rem;
       }
+
       .hero-subtitle {
         font-size: 0.85rem;
         margin-bottom: 1.5rem;
       }
+
       .hero-card {
         padding: 1.5rem;
       }
+
       .hero-icon i {
         width: 50px;
         height: 50px;
         padding: 0.75rem;
       }
+
       .hero-title {
         font-size: 1.1rem;
       }
+
       .hero-text {
         font-size: 0.9rem;
       }
@@ -310,6 +330,7 @@
       gap: 8px;
       margin: 16px 0 24px;
     }
+
     .alpha-btn {
       width: 34px;
       height: 34px;
@@ -325,12 +346,14 @@
       transition: all 0.16s ease;
       text-decoration: none;
     }
+
     .alpha-btn:hover {
       background: #111827;
       color: #f9fafb;
       border-color: #111827;
       transform: translateY(-1px);
     }
+
     .alpha-btn.active {
       background: #2563eb;
       color: #f9fafb;
@@ -361,18 +384,20 @@
       gap: 16px;
       align-items: flex-start;
       transition: transform 0.16s ease, box-shadow 0.16s ease,
-                  border-color 0.16s ease;
+        border-color 0.16s ease;
       position: relative;
       overflow: hidden;
     }
+
     .resource-card::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(59,130,246,0.09), rgba(16,185,129,0.06));
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.09), rgba(16, 185, 129, 0.06));
       opacity: 0;
       transition: opacity 0.18s ease;
     }
+
     .resource-card-inner {
       position: relative;
       z-index: 1;
@@ -397,10 +422,12 @@
       font-size: 1.05rem;
       margin-bottom: 4px;
     }
+
     .resource-text h3 span {
       color: #2563eb;
       margin-left: 2px;
     }
+
     .resource-text p {
       font-size: 0.9rem;
       color: #4b5563;
@@ -412,6 +439,7 @@
       border-color: #c4b5fd;
       box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
     }
+
     .resource-card:hover::before {
       opacity: 1;
     }
@@ -420,6 +448,7 @@
       .resources-grid {
         grid-template-columns: 1fr;
       }
+
       .page-wrap {
         padding: 32px 12px;
       }
@@ -451,7 +480,7 @@
       display: none;
       gap: 40px;
       border-radius: 0 0 12px 12px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
       z-index: 1050;
     }
 
@@ -503,6 +532,7 @@
       border-bottom: none !important;
       border: none !important;
     }
+
     .navbar {
       border: none !important;
     }
@@ -511,30 +541,37 @@
       .navbar-brand span {
         display: none;
       }
+
       .navbar-brand img {
         height: 35px;
       }
+
       .navbar-nav {
         text-align: center;
         margin-bottom: 1rem;
       }
+
       .navbar-nav .nav-link {
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
       }
+
       .search-form {
         flex-direction: column;
         gap: 0.5rem;
       }
+
       .search-select,
       .search-input,
       .search-btn {
         width: 100%;
       }
+
       .navbar-nav.align-items-center {
         justify-content: center;
         gap: 0.5rem;
       }
+
       .btn-login-outline,
       .btn-signup {
         padding: 0.375rem 0.75rem;
@@ -543,7 +580,10 @@
     }
 
     /* Touch-friendly elements */
-    .btn, button, .nav-link, .dropdown-item {
+    .btn,
+    button,
+    .nav-link,
+    .dropdown-item {
       touch-action: manipulation;
       min-height: 44px;
       min-width: 44px;
@@ -555,6 +595,7 @@
       pointer-events: none;
       opacity: 0.6;
     }
+
     .loading::after {
       content: "";
       position: absolute;
@@ -666,15 +707,20 @@
       font-weight: 500;
     }
 
-    .breadcrumb-item + .breadcrumb-item::before {
+    .breadcrumb-item+.breadcrumb-item::before {
       content: "/";
       color: #d1d5db;
       padding: 0 0.5rem;
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     /* Book Strip Styles */
@@ -881,7 +927,8 @@
       }
 
       .scroll-arrow {
-        display: none; /* Hide arrows on very small screens */
+        display: none;
+        /* Hide arrows on very small screens */
       }
 
       .section-heading {
@@ -1132,6 +1179,7 @@
     }
 
     @media (max-width: 480px) {
+
       .book-detail .img-fluid,
       .book-detail .book-cover-placeholder {
         max-width: 200px;
@@ -1151,30 +1199,25 @@
         padding: 0.4rem 1rem;
       }
     }
-
   </style>
 
   {% block extra_head %}{% endblock %}
 </head>
+
 <body>
   <!-- Main navbar -->
   <nav class="navbar navbar-expand-lg main-nav">
     <div class="container">
       <!-- Brand -->
       <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-        <img src="{% static 'images/anulogo.jpeg' %}" alt="ANU Logo" style="height: 40px; width: auto; margin-right: 8px;" />
+        <img src="{% static 'images/anulogo.jpeg' %}" alt="ANU Logo"
+          style="height: 40px; width: auto; margin-right: 8px;" />
         <span style="font-weight: bold;">ACHARYA NAGARJUNA UNIVERSITY</span>
       </a>
 
       <!-- Mobile toggler -->
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#mainNavbar"
-        aria-label="Toggle navigation"
-        title="Toggle navigation menu"
-      >
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+        aria-label="Toggle navigation" title="Toggle navigation menu">
         <span class="navbar-toggler-icon"></span>
       </button>
 
@@ -1188,13 +1231,7 @@
             <a class="nav-link" href="{% url 'book_list' %}">Find & Access</a>
           </li>
           <li class="nav-item dropdown mega-dropdown">
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
-              id="browseDropdown"
-              role="button"
-              aria-expanded="false"
-            >
+            <a class="nav-link dropdown-toggle" href="#" id="browseDropdown" role="button" aria-expanded="false">
               Browse
             </a>
             <div class="dropdown-menu mega-menu" aria-labelledby="browseDropdown">
@@ -1252,20 +1289,16 @@
         <!-- Search and Auth Row -->
         <div class="d-flex justify-content-between align-items-center w-100">
           <!-- Search -->
-          <form id="search-form" class="d-flex flex-grow-1 me-3" method="get" action="{% url 'all_search' %}">
-            <select id="search-type" class="form-select form-select-sm search-select" name="type" aria-label="Search type">
+          <form id="search-form" class="d-flex flex-grow-1 me-3" method="get" action="{% url 'search' %}">
+            <select id="search-type" class="form-select form-select-sm search-select" name="type"
+              aria-label="Search type">
               <option value="all">All</option>
               <option value="title">Title</option>
               <option value="author">Author</option>
               <option value="subject">Subject</option>
             </select>
-            <input
-              class="form-control form-control-sm search-input"
-              type="search"
-              placeholder="Search"
-              name="q"
-              aria-label="Search query"
-            />
+            <input class="form-control form-control-sm search-input" type="search" placeholder="Search" name="q"
+              aria-label="Search query" />
             <button class="btn btn-outline-secondary btn-sm search-btn" type="submit" aria-label="Search">
               <i class="fa-solid fa-magnifying-glass"></i> Search
             </button>
@@ -1274,27 +1307,28 @@
           <!-- Right side buttons -->
           <ul class="navbar-nav align-items-center mb-0">
             {% if user.is_authenticated %}
-              <li class="nav-item">
-                <a class="nav-link" href="{% if user.is_staff %}{% url 'admin_dashboard' %}{% else %}{% url 'my_books' %}{% endif %}">
-                  Hi, {{ user.username }}
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="btn btn-login-outline btn-sm me-1" href="{% url 'logout' %}">
-                  Logout
-                </a>
-              </li>
+            <li class="nav-item">
+              <a class="nav-link"
+                href="{% if user.is_staff %}{% url 'admin_dashboard' %}{% else %}{% url 'my_books' %}{% endif %}">
+                Hi, {{ user.username }}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-login-outline btn-sm me-1" href="{% url 'logout' %}">
+                Logout
+              </a>
+            </li>
             {% else %}
-              <li class="nav-item">
-                <a class="btn btn-login-outline btn-sm me-1" href="{% url 'login' %}">
-                  Log In
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="btn btn-signup btn-sm" href="{% url 'signup' %}">
-                  Sign Up
-                </a>
-              </li>
+            <li class="nav-item">
+              <a class="btn btn-login-outline btn-sm me-1" href="{% url 'login' %}">
+                Log In
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-signup btn-sm" href="{% url 'signup' %}">
+                Sign Up
+              </a>
+            </li>
             {% endif %}
           </ul>
         </div>
@@ -1309,13 +1343,13 @@
   <div class="page-wrap">
     <main class="content-card">
       {% if messages %}
-        <div class="mt-2">
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-sm py-2 mb-2">
-              {{ message }}
-            </div>
-          {% endfor %}
+      <div class="mt-2">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-sm py-2 mb-2">
+          {{ message }}
         </div>
+        {% endfor %}
+      </div>
       {% endif %}
 
       {% block breadcrumbs %}{% endblock %}
@@ -1333,16 +1367,16 @@
       <div class="d-flex gap-2">
         <a href="#" class="text-light" title="Facebook" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
         <a href="#" class="text-light" title="YouTube" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-        <a href="#" class="text-light" title="X (Twitter)" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a>
-        <a href="#" class="text-light" title="Instagram" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="text-light" title="X (Twitter)" aria-label="X (Twitter)"><i
+            class="fa-brands fa-x-twitter"></i></a>
+        <a href="#" class="text-light" title="Instagram" aria-label="Instagram"><i
+            class="fa-brands fa-instagram"></i></a>
       </div>
     </div>
   </footer>
 
   <!-- Bootstrap JS -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- ANU LMS Motion Effects JS -->
   <script src="{% static 'js/motion-effects.js' %}"></script>
@@ -1356,30 +1390,30 @@
     }
 
     // Dynamic search form action
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const searchTypeSelect = document.getElementById('search-type');
       const searchForm = document.getElementById('search-form');
 
       if (searchTypeSelect && searchForm) {
-        searchTypeSelect.addEventListener('change', function() {
+        searchTypeSelect.addEventListener('change', function () {
           const type = this.value;
           let actionUrl = '';
 
-          switch(type) {
+          switch (type) {
             case 'all':
-              actionUrl = "{% url 'all_search' %}";
+              actionUrl = "{% url 'search' %}";
               break;
             case 'title':
-              actionUrl = "{% url 'title_search' %}";
+              actionUrl = "{% url 'search' %}";
               break;
             case 'author':
-              actionUrl = "{% url 'author_search' %}";
+              actionUrl = "{% url 'search' %}";
               break;
             case 'subject':
-              actionUrl = "{% url 'subject_search' %}";
+              actionUrl = "{% url 'search' %}";
               break;
             default:
-              actionUrl = "{% url 'all_search' %}";
+              actionUrl = "{% url 'search' %}";
           }
 
           searchForm.action = actionUrl;
@@ -1392,28 +1426,28 @@
 
       if (browseToggle && megaMenu) {
         // Prevent Bootstrap default toggle and handle click manually
-        browseToggle.addEventListener('click', function(e) {
+        browseToggle.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
           megaMenu.classList.toggle('show');
         });
 
         // Close on outside click
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
           if (!browseToggle.contains(e.target) && !megaMenu.contains(e.target)) {
             megaMenu.classList.remove('show');
           }
         });
 
         // Close on Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
           if (e.key === 'Escape') {
             megaMenu.classList.remove('show');
           }
         });
 
         // Remove any hover behavior if present
-        browseToggle.addEventListener('mouseenter', function(e) {
+        browseToggle.addEventListener('mouseenter', function (e) {
           // Do nothing for hover
         });
       }
@@ -1422,4 +1456,5 @@
 
   {% block extra_js %}{% endblock %}
 </body>
+
 </html>
