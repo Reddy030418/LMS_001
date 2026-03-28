@@ -1,47 +1,92 @@
 {% extends 'portal/base.html' %}
 
-{% block title %}Books - ANU LMS{% endblock %}
+{% block title %}{% if title %}{{ title }}{% else %}Books{% endif %} - ANU LMS{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if title %}{{ title }}{% else %}Books{% endif %}</li>
+  </ol>
+</nav>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>All Books</h1>
-    <div class="row">
+<div class="app-view">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 style="font-size:1.75rem;background:var(--gradient-hero);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+                {% if title %}{{ title }}{% elif department %}{{ department.name }}{% else %}Book Catalog{% endif %}
+            </h1>
+            {% if query %}
+                <p class="text-muted mb-0" style="font-size:0.85rem;">
+                    Showing results for "<strong style="color:var(--accent-indigo);">{{ query }}</strong>"
+                </p>
+            {% endif %}
+        </div>
+        <a href="{% url 'advanced_search' %}" class="btn btn-sm btn-login-outline">
+            <i class="fa-solid fa-sliders me-1"></i>Advanced Search
+        </a>
+    </div>
+
+    {% if page_obj %}
+    <div class="row g-3 search-results">
         {% for book in page_obj %}
-        <div class="col-md-3 mb-4">
+        <div class="col-lg-3 col-md-4 col-6">
             <div class="card h-100">
                 {% if book.cover_image %}
                     <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
                 {% else %}
-                    <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
-                        <span>No Image</span>
+                    <div class="card-img-top d-flex align-items-center justify-content-center"
+                         style="height:200px;background:linear-gradient(135deg, var(--bg-secondary), rgba(99,102,241,0.1));">
+                        <div class="text-center px-2">
+                            <i class="fa-solid fa-book fa-2x mb-2" style="color:var(--text-muted);opacity:0.4;"></i>
+                            <p style="font-size:0.7rem;color:var(--text-muted);margin:0;">{{ book.title|truncatechars:40 }}</p>
+                        </div>
                     </div>
                 {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ book.title }}</h5>
-                    <p class="card-text">by {{ book.author }}</p>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title" style="font-size:0.95rem;">{{ book.title|truncatechars:45 }}</h5>
+                    <p class="card-text" style="font-size:0.8rem;">by {{ book.author|truncatechars:25 }}</p>
+                    {% if book.isbn %}
                     <p class="card-text"><small class="text-muted">ISBN: {{ book.isbn }}</small></p>
-                    <a href="{% url 'book_detail' book.pk %}" class="btn btn-primary">View Details</a>
+                    {% endif %}
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        {% if book.available_copies > 0 %}
+                            <span class="badge bg-success">Available</span>
+                        {% else %}
+                            <span class="badge bg-danger">Issued</span>
+                        {% endif %}
+                        <a href="{% url 'book_detail' book.pk %}" class="book-btn">View</a>
+                    </div>
                 </div>
             </div>
         </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fa-solid fa-search fa-3x mb-3" style="color:var(--text-muted);opacity:0.3;"></i>
+            <p class="text-muted">No books found matching your criteria.</p>
+        </div>
         {% endfor %}
     </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
     <div class="pagination">
         <span class="step-links">
             {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
             {% endif %}
-
             <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
             </span>
-
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">next</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
             {% endif %}
         </span>
     </div>
+    {% endif %}
+    {% endif %}
 </div>
 {% endblock %}

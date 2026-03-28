@@ -1,27 +1,63 @@
 {% extends 'portal/base.html' %}
+{% load static %}
 
 {% block title %}Register - ANU LMS{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Register</h3>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-success">Register</button>
-                    </form>
-                </div>
-                <div class="card-footer">
-                    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-                </div>
-            </div>
+<div class="app-view">
+  <div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+      <div class="text-center mb-4">
+        <div style="width:80px;height:80px;border-radius:50%;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+          <i class="fa-solid fa-user-plus fa-2x" style="color:var(--accent-emerald);"></i>
         </div>
+        <h1 style="font-size:1.75rem;background:var(--gradient-hero);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Create Account</h1>
+        <p class="text-muted">Join ANU Library to access books and resources</p>
+      </div>
+
+      <div class="dashboard-card">
+        <form method="post">
+          {% csrf_token %}
+
+          {% if form.errors %}
+          <div class="alert alert-danger mb-3" style="font-size:0.85rem;">
+            <i class="fa-solid fa-circle-exclamation me-1"></i>
+            Please correct the errors below.
+          </div>
+          {% endif %}
+
+          {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            <input type="{% if 'password' in field.name %}password{% else %}text{% endif %}"
+                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                   id="{{ field.id_for_label }}"
+                   name="{{ field.name }}"
+                   value="{% if 'password' not in field.name %}{{ field.value|default:'' }}{% endif %}"
+                   placeholder="{{ field.label }}"
+                   {% if field.field.required %}required{% endif %}>
+            {% if field.errors %}
+              {% for error in field.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+            {% if field.help_text %}
+              <small class="text-muted" style="font-size:0.75rem;">{{ field.help_text }}</small>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <button type="submit" class="btn btn-primary w-100 mb-3" style="padding:0.75rem;font-size:1rem;">
+            <i class="fa-solid fa-user-plus me-2"></i>Create Account
+          </button>
+
+          <p class="text-center text-muted" style="font-size:0.85rem;">
+            Already have an account?
+            <a href="{% url 'login' %}" style="color:var(--accent-indigo);text-decoration:none;">Sign in</a>
+          </p>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

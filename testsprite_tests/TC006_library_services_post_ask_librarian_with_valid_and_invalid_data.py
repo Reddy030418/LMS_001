@@ -13,7 +13,7 @@ def test_tc006_post_ask_librarian_valid_invalid():
         "message": "I need help."
     }
     try:
-        resp = requests.post(url, data=valid_payload, timeout=30)
+        resp = requests.post(url, data=valid_payload, timeout=30, allow_redirects=False)
         # According to PRD endpoint, success responds with HTTP 302 redirect
         assert resp.status_code == 302, f"Expected 302 for valid request, got {resp.status_code}"
     except Exception as e:

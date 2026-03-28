@@ -7,59 +7,49 @@
 <section id="homeView" class="app-view">
   <!-- Hero cards -->
   <div class="hero-wrapper">
-    <h2 class="hero-main-title mb-3">Welcome to ANU Library &raquo;</h2>
+    <h2 class="hero-main-title mb-2">Welcome to ANU Library »</h2>
     <p class="hero-subtitle mb-4">Explore subscribed databases, online journals, and digital resources available through Acharya Nagarjuna University Library.</p>
     <div class="row g-3 align-items-stretch hero-row">
       <div class="col-auto d-flex align-items-center">
-        <button class="hero-arrow-btn" title="Previous Slide">
+        <button class="hero-arrow-btn" title="Previous Slide" onclick="scrollStrip('heroStrip',-400)">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
       </div>
 
-      <div class="col-lg-4 col-md-4">
-        <a href="{% url 'eresource_list' '0' %}" class="text-decoration-none">
-          <div class="hero-card">
-            <div class="hero-icon">
-              <i class="fa-solid fa-book-open fa-2x"></i>
-            </div>
-            <div class="hero-title">Read Free Library Books Online</div>
-            <div class="hero-text">
-              Access thousands of ANU digital books anytime, from campus or home.
-            </div>
+      <div class="col" style="overflow:hidden;">
+        <div id="heroStrip" class="d-flex gap-3" style="overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;">
+          <div style="flex:0 0 calc(33.33% - 1rem);min-width:280px;">
+            <a href="{% url 'eresource_list' '0' %}" class="text-decoration-none d-block h-100">
+              <div class="hero-card">
+                <div class="hero-icon"><i class="fa-solid fa-book-open fa-2x"></i></div>
+                <div class="hero-title">Read Free Library Books Online</div>
+                <div class="hero-text">Access thousands of ANU digital books anytime, from campus or home.</div>
+              </div>
+            </a>
           </div>
-        </a>
-      </div>
-
-      <div class="col-lg-4 col-md-4">
-        <a href="{% url 'my_books' %}" class="text-decoration-none">
-          <div class="hero-card">
-            <div class="hero-icon">
-              <i class="fa-solid fa-bullseye fa-2x"></i>
-            </div>
-            <div class="hero-title">Set a Yearly Reading Goal</div>
-            <div class="hero-text">
-              Let our AI assistant suggest books and track your reading.
-            </div>
+          <div style="flex:0 0 calc(33.33% - 1rem);min-width:280px;">
+            <a href="{% url 'my_books' %}" class="text-decoration-none d-block h-100">
+              <div class="hero-card">
+                <div class="hero-icon"><i class="fa-solid fa-bullseye fa-2x"></i></div>
+                <div class="hero-title">Set a Yearly Reading Goal</div>
+                <div class="hero-text">Let our AI assistant suggest books and track your reading.</div>
+              </div>
+            </a>
           </div>
-        </a>
-      </div>
-
-      <div class="col-lg-4 col-md-4">
-        <a href="{% url 'my_books' %}" class="text-decoration-none">
-          <div class="hero-card">
-            <div class="hero-icon">
-              <i class="fa-solid fa-heart fa-2x"></i>
-            </div>
-            <div class="hero-title">Keep Track of Your Favourite Books</div>
-            <div class="hero-text">
-              Organise books into lists like “Exam Prep”, “Research”, and “Fun Reads”.
-            </div>
+          <div style="flex:0 0 calc(33.33% - 1rem);min-width:280px;">
+            <a href="{% url 'my_books' %}" class="text-decoration-none d-block h-100">
+              <div class="hero-card">
+                <div class="hero-icon"><i class="fa-solid fa-heart fa-2x"></i></div>
+                <div class="hero-title">Keep Track of Your Favourites</div>
+                <div class="hero-text">Organise books into lists like "Exam Prep", "Research", and "Fun Reads".</div>
+              </div>
+            </a>
           </div>
-        </a>
+        </div>
       </div>
 
       <div class="col-auto d-flex align-items-center">
-        <button class="hero-arrow-btn" title="Next Slide">
+        <button class="hero-arrow-btn" title="Next Slide" onclick="scrollStrip('heroStrip',400)">
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
@@ -67,70 +57,61 @@
   </div>
 
   <!-- E-Resources & Databases Section -->
-  <section class="py-5 bg-white">
-    <div class="container">
-      <h3 class="fw-bold">E-Resources & Databases &raquo;</h3>
+  <section class="py-4 mb-4">
+    <h3 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">
+      <i class="fa-solid fa-globe me-2" style="color:var(--accent-indigo);"></i>
+      E-Resources & Databases »
+    </h3>
 
-      <!-- A-Z Filter -->
-      <div class="mt-3 mb-4 d-flex flex-wrap gap-2">
-        {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-          <a href="{% url 'eresource_list' letter %}" class="btn btn-outline-dark btn-sm">
-            {{ letter }}
-          </a>
-        {% endfor %}
-        <a href="{% url 'eresource_list' '0' %}" class="btn btn-outline-dark btn-sm">#</a>
+    <!-- A-Z Filter -->
+    <div class="alpha-row">
+      {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+        <a href="{% url 'eresource_list' letter %}" class="alpha-btn">{{ letter }}</a>
+      {% endfor %}
+      <a href="{% url 'eresource_list' '0' %}" class="alpha-btn">#</a>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="row g-3 mt-2">
+      <div class="col-md-4">
+        <a href="{% url 'opening_hours' %}" class="text-decoration-none d-block h-100">
+          <div class="dashboard-card text-center h-100">
+            <div style="width:60px;height:60px;border-radius:50%;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+              <i class="fa-solid fa-clock fa-xl" style="color:var(--accent-blue);"></i>
+            </div>
+            <h5 style="font-size:1rem;color:var(--text-primary);">Opening Hours »</h5>
+            <p class="text-muted" style="font-size:0.85rem;">Find out the opening hours of each ANU Library branch.</p>
+          </div>
+        </a>
       </div>
-
-      <!-- Feature Cards -->
-      <div class="row g-4 mt-3">
-        <div class="col-md-4">
-          <a href="{% url 'opening_hours' %}" class="text-decoration-none d-block h-100 resource-card">
-            <div class="card shadow-sm h-100">
-              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                <i class="fa-solid fa-clock fa-3x text-primary"></i>
-              </div>
-              <div class="card-body">
-                <h5 class="card-title">Opening Hours &raquo;</h5>
-                <p class="card-text small">Find out the opening hours of each Acharya Nagarjuna University Library branch.</p>
-              </div>
+      <div class="col-md-4">
+        <a href="{% url 'ask_librarian' %}" class="text-decoration-none d-block h-100">
+          <div class="dashboard-card text-center h-100">
+            <div style="width:60px;height:60px;border-radius:50%;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+              <i class="fa-solid fa-comments fa-xl" style="color:var(--accent-violet);"></i>
             </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="{% url 'ask_librarian' %}" class="text-decoration-none d-block h-100 resource-card">
-            <div class="card shadow-sm h-100">
-              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                <i class="fa-solid fa-question-circle fa-3x text-primary"></i>
-              </div>
-              <div class="card-body">
-                <h5 class="card-title">Ask a Librarian &raquo;</h5>
-                <p class="card-text small">Ask questions, get research help, and consult reference librarians.</p>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="{% url 'book_study_room' %}" class="text-decoration-none d-block h-100 resource-card">
-            <div class="card shadow-sm h-100">
-              <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                <i class="fa-solid fa-chair fa-3x text-primary"></i>
-              </div>
-              <div class="card-body">
-                <h5 class="card-title">Book a Study Room &raquo;</h5>
-                <p class="card-text small">Reserve study spaces and reading rooms at ANU Central Library.</p>
-              </div>
-            </div>
-          </a>
-        </div>
+            <h5 style="font-size:1rem;color:var(--text-primary);">Ask a Librarian »</h5>
+            <p class="text-muted" style="font-size:0.85rem;">Ask questions, get research help, and consult librarians.</p>
+          </div>
+        </a>
       </div>
-
+      <div class="col-md-4">
+        <a href="{% url 'book_study_room' %}" class="text-decoration-none d-block h-100">
+          <div class="dashboard-card text-center h-100">
+            <div style="width:60px;height:60px;border-radius:50%;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+              <i class="fa-solid fa-door-open fa-xl" style="color:var(--accent-emerald);"></i>
+            </div>
+            <h5 style="font-size:1rem;color:var(--text-primary);">Book a Study Room »</h5>
+            <p class="text-muted" style="font-size:0.85rem;">Reserve study spaces at ANU Central Library.</p>
+          </div>
+        </a>
+      </div>
     </div>
   </section>
 
   <!-- SECTION: Computer Science -->
   <h6 class="section-heading mt-4">
+    <i class="fa-solid fa-microchip me-1" style="color:var(--accent-indigo);"></i>
     Computer Science
     <span class="small-text">Based on your department</span>
   </h6>
@@ -143,24 +124,16 @@
         <div class="book-card">
           <div class="book-cover-container">
             {% if book.cover_image %}
-              <img
-                src="{{ book.cover_image.url }}"
-                class="book-cover-img"
-                alt="{{ book.title }}"
-              />
+              <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
             {% else %}
-              <div class="book-cover-placeholder">
-                {{ book.title|truncatechars:40 }}
-              </div>
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
             {% endif %}
           </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No books found in this section.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No books found in this section.</span>
       {% endfor %}
     </div>
     <button class="scroll-arrow right" onclick="scrollStrip('csStrip', 300)" title="Scroll right" aria-label="Scroll right">
@@ -169,7 +142,10 @@
   </div>
 
   <!-- SECTION: Trending Books -->
-  <h6 class="section-heading">Trending Books</h6>
+  <h6 class="section-heading">
+    <i class="fa-solid fa-fire me-1" style="color:var(--accent-rose);"></i>
+    Trending Books
+  </h6>
   <div class="book-strip">
     <button class="scroll-arrow left" onclick="scrollStrip('trendingStrip', -300)" title="Scroll left" aria-label="Scroll left">
       <i class="fa-solid fa-chevron-left"></i>
@@ -177,20 +153,18 @@
     <div id="trendingStrip" class="book-scroller">
       {% for book in trending_books %}
         <div class="book-card">
-          {% if book.cover_image %}
-            <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
-          {% else %}
-            <div class="book-cover-placeholder">
-              {{ book.title|truncatechars:40 }}
-            </div>
-          {% endif %}
+          <div class="book-cover-container">
+            {% if book.cover_image %}
+              <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
+            {% else %}
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
+            {% endif %}
+          </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No trending books found.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No trending books found.</span>
       {% endfor %}
     </div>
     <button class="scroll-arrow right" onclick="scrollStrip('trendingStrip', 300)" title="Scroll right" aria-label="Scroll right">
@@ -199,7 +173,10 @@
   </div>
 
   <!-- SECTION: Classic Books -->
-  <h6 class="section-heading">Classic Books</h6>
+  <h6 class="section-heading">
+    <i class="fa-solid fa-bookmark me-1" style="color:var(--accent-amber);"></i>
+    Classic Books
+  </h6>
   <div class="book-strip">
     <button class="scroll-arrow left" onclick="scrollStrip('classicStrip', -300)" title="Scroll left" aria-label="Scroll left">
       <i class="fa-solid fa-chevron-left"></i>
@@ -211,18 +188,14 @@
             {% if book.cover_image %}
               <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
             {% else %}
-              <div class="book-cover-placeholder">
-                {{ book.title|truncatechars:40 }}
-              </div>
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
             {% endif %}
           </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No classic books found.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No classic books found.</span>
       {% endfor %}
     </div>
     <button class="scroll-arrow right" onclick="scrollStrip('classicStrip', 300)" title="Scroll right" aria-label="Scroll right">
@@ -230,8 +203,11 @@
     </button>
   </div>
 
-  <!-- SECTION: Recently Returned -->
-  <h6 class="section-heading">Recently Returned</h6>
+  <!-- SECTION: Recently Added -->
+  <h6 class="section-heading">
+    <i class="fa-solid fa-sparkles me-1" style="color:var(--accent-cyan);"></i>
+    Recently Added
+  </h6>
   <div class="book-strip">
     <div id="recentStrip" class="book-scroller">
       {% for book in recently_returned %}
@@ -240,24 +216,23 @@
             {% if book.cover_image %}
               <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
             {% else %}
-              <div class="book-cover-placeholder">
-                {{ book.title|truncatechars:40 }}
-              </div>
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
             {% endif %}
           </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No recent returns.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No recent additions.</span>
       {% endfor %}
     </div>
   </div>
 
   <!-- SECTION: Kids -->
-  <h6 class="section-heading">Kids</h6>
+  <h6 class="section-heading">
+    <i class="fa-solid fa-child me-1" style="color:var(--accent-emerald);"></i>
+    Kids
+  </h6>
   <div class="book-strip">
     <div class="book-scroller">
       {% for book in kids_books %}
@@ -266,25 +241,24 @@
             {% if book.cover_image %}
               <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
             {% else %}
-              <div class="book-cover-placeholder">
-                {{ book.title|truncatechars:40 }}
-              </div>
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
             {% endif %}
           </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No kids books configured.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No kids books configured.</span>
       {% endfor %}
     </div>
   </div>
 
   <!-- SECTION: Thriller -->
-  <h6 class="section-heading">Thriller</h6>
-  <div class="book-strip mb-5">
+  <h6 class="section-heading">
+    <i class="fa-solid fa-skull me-1" style="color:var(--accent-rose);"></i>
+    Thriller
+  </h6>
+  <div class="book-strip mb-4">
     <div class="book-scroller">
       {% for book in thriller_books %}
         <div class="book-card">
@@ -292,20 +266,37 @@
             {% if book.cover_image %}
               <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}" />
             {% else %}
-              <div class="book-cover-placeholder">
-                {{ book.title|truncatechars:40 }}
-              </div>
+              <div class="book-cover-placeholder">{{ book.title|truncatechars:40 }}</div>
             {% endif %}
           </div>
           <div class="book-title">{{ book.title }}</div>
-          <a href="{% url 'book_detail' book.id %}" class="btn btn-primary btn-sm book-btn">
-            View
-          </a>
+          <a href="{% url 'book_detail' book.id %}" class="book-btn">View</a>
         </div>
       {% empty %}
-        <span class="small text-muted">No thriller books configured.</span>
+        <span class="text-muted" style="font-size:0.85rem;">No thriller books configured.</span>
       {% endfor %}
     </div>
   </div>
+
+  <!-- News Teaser -->
+  {% if news_items %}
+  <h6 class="section-heading">
+    <i class="fa-solid fa-newspaper me-1" style="color:var(--accent-amber);"></i>
+    Latest News & Events
+  </h6>
+  <div class="row g-3 mb-4">
+    {% for item in news_items %}
+    <div class="col-md-4">
+      <div class="dashboard-card h-100">
+        <span class="badge bg-info mb-2">{{ item.published_on|date:"M d, Y" }}</span>
+        <h6 style="font-size:0.95rem;">{{ item.title }}</h6>
+        {% if item.summary %}
+          <p class="text-muted" style="font-size:0.8rem;">{{ item.summary|truncatechars:100 }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </section>
 {% endblock %}

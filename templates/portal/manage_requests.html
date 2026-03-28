@@ -1,53 +1,66 @@
 {% extends 'portal/base.html' %}
+{% load static %}
 
 {% block title %}Manage Requests - ANU LMS{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Manage Book Requests</h2>
-    
-    {% if requests %}
-        <div class="table-responsive">
-            <form method="post">
-                {% csrf_token %}
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Book Title</th>
-                            <th>Author</th>
-                            <th>Requested On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for request in requests %}
-                        <tr>
-                            <td>{{ request.user.username }}</td>
-                            <td><a href="{% url 'book_detail' request.book.id %}">{{ request.book.title }}</a></td>
-                            <td>{{ request.book.author }}</td>
-                            <td>{{ request.created_at|date:"M d, Y H:i" }}</td>
-                            <td>
-                                <button type="submit" name="request_id" value="{{ request.id }}" 
-                                        name="action" value="approve" class="btn btn-success btn-sm">
-                                    Approve
-                                </button>
-                                <button type="submit" name="request_id" value="{{ request.id }}" 
-                                        name="action" value="reject" class="btn btn-danger btn-sm">
-                                    Reject
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="app-view">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 style="font-size:1.75rem;background:var(--gradient-hero);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        <i class="fa-solid fa-clipboard-check me-2"></i>Manage Book Requests
+      </h1>
+      <p class="text-muted mb-0" style="font-size:0.9rem;">Review and process pending book requests from students.</p>
+    </div>
+  </div>
+
+  {% if requests %}
+  <div class="dashboard-card">
+    <div style="overflow-x:auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Book</th>
+          <th>Requested On</th>
+          <th>Note</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td><i class="fa-solid fa-user me-1" style="color:var(--text-muted);"></i>{{ req.user.username }}</td>
+          <td>
+            <a href="{% url 'book_detail' req.book.id %}" style="color:var(--accent-indigo);text-decoration:none;">
+              {{ req.book.title|truncatechars:40 }}
+            </a>
+          </td>
+          <td>{{ req.created_at|date:"M d, Y" }}</td>
+          <td>{{ req.note|truncatechars:50|default:"—" }}</td>
+          <td>
+            <form method="post" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="request_id" value="{{ req.id }}">
+              <button type="submit" name="action" value="approve" class="btn btn-sm" style="background:var(--accent-emerald);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.8rem;">
+                <i class="fa-solid fa-check me-1"></i>Approve
+              </button>
+              <button type="submit" name="action" value="reject" class="btn btn-sm" style="background:var(--accent-rose);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.8rem;">
+                <i class="fa-solid fa-xmark me-1"></i>Reject
+              </button>
             </form>
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            <h5>No pending requests</h5>
-            <p>All requests have been processed.</p>
-        </div>
-    {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="dashboard-card text-center py-5">
+    <i class="fa-solid fa-clipboard-check fa-3x mb-3" style="color:var(--accent-emerald);opacity:0.3;"></i>
+    <p class="text-muted">No pending requests. All caught up! 🎉</p>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

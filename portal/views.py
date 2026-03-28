@@ -12,8 +12,12 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_ratelimit.decorators import ratelimit
 
-# PostgreSQL full-text search
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+# PostgreSQL full-text search (optional, with SQLite fallback)
+try:
+    from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+    HAS_POSTGRES_SEARCH = True
+except ImportError:
+    HAS_POSTGRES_SEARCH = False
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -499,18 +503,20 @@ def search_suggestions(request: HttpRequest):
     query = request.GET.get('q', '')
     if not query:
         return JsonResponse([], safe=False)
-    # PostgreSQL full-text search for suggestions
-    vector = SearchVector('title', weight='A') + SearchVector('author', weight='B')
-    search_query = SearchQuery(query, search_type='plain')
-    suggestions = (
-        Book.objects
-        .annotate(rank=SearchRank(vector, search_query))
-        .filter(rank__gte=0.01)
-        .order_by('-rank')[:5]
-        .values_list('title', flat=True)
-    )
-    results = list(suggestions)
-    # Fallback to icontains if FTS returns nothing
+    results = []
+    if HAS_POSTGRES_SEARCH:
+        # PostgreSQL full-text search for suggestions
+        vector = SearchVector('title', weight='A') + SearchVector('author', weight='B')
+        search_query = SearchQuery(query, search_type='plain')
+        suggestions = (
+            Book.objects
+            .annotate(rank=SearchRank(vector, search_query))
+            .filter(rank__gte=0.01)
+            .order_by('-rank')[:5]
+            .values_list('title', flat=True)
+        )
+        results = list(suggestions)
+    # Fallback to icontains if FTS returns nothing or not available
     if not results:
         results = list(
             Book.objects.filter(
@@ -523,17 +529,21 @@ def search_suggestions(request: HttpRequest):
 def search_view(request: HttpRequest):
     query = request.GET.get('q', '')
     if query:
-        # PostgreSQL full-text search with ranking
-        vector = SearchVector('title', weight='A') + SearchVector('author', weight='B') + SearchVector('subject', weight='C')
-        search_query = SearchQuery(query, search_type='plain')
-        books = (
-            Book.objects
-            .annotate(search=vector, rank=SearchRank(vector, search_query))
-            .filter(rank__gte=0.01)
-            .order_by('-rank', '-created_at')
-        )
-        # Fallback if FTS yields no results
-        if not books.exists():
+        books = None
+        if HAS_POSTGRES_SEARCH:
+            # PostgreSQL full-text search with ranking
+            vector = SearchVector('title', weight='A') + SearchVector('author', weight='B') + SearchVector('subject', weight='C')
+            search_query = SearchQuery(query, search_type='plain')
+            books = (
+                Book.objects
+                .annotate(search=vector, rank=SearchRank(vector, search_query))
+                .filter(rank__gte=0.01)
+                .order_by('-rank', '-created_at')
+            )
+            if not books.exists():
+                books = None
+        # Fallback if FTS yields no results or not available
+        if books is None:
             books = Book.objects.filter(
                 Q(title__icontains=query) | Q(author__icontains=query) | Q(subject__icontains=query)
             ).order_by('-created_at')
