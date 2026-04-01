@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Count, Sum
+from django.utils import timezone
 from books.models import Book, Department
 from transactions.models import Transaction
 from accounts.models import UserProfile
@@ -12,14 +13,19 @@ from io import BytesIO
 
 @login_required
 def dashboard(request):
-    if not request.user.is_staff and request.user.userprofile.role != 'librarian':
-        return render(request, '403.html')  # Forbidden
+    try:
+        user_role = request.user.userprofile.role
+    except (UserProfile.DoesNotExist, AttributeError):
+        user_role = None
+    if not request.user.is_staff and user_role != 'librarian':
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Forbidden')
 
     # Stats
     total_books = Book.objects.count()
     total_members = UserProfile.objects.filter(role='student').count()
     active_loans = Transaction.objects.filter(is_returned=False).count()
-    overdue_count = Transaction.objects.filter(is_returned=False, due_date__lt=timezone.now().date()).count()
+    overdue_count = Transaction.objects.filter(is_returned=False, due_date__lt=timezone.now()).count()
 
     # Charts data
     issues_per_dept = Transaction.objects.values('book__department__name').annotate(count=Count('id')).order_by('-count')
@@ -37,7 +43,11 @@ def dashboard(request):
 
 @login_required
 def export_csv(request):
-    if not request.user.is_staff and request.user.userprofile.role != 'librarian':
+    try:
+        user_role = request.user.userprofile.role
+    except (UserProfile.DoesNotExist, AttributeError):
+        user_role = None
+    if not request.user.is_staff and user_role != 'librarian':
         return HttpResponse('Forbidden', status=403)
 
     response = HttpResponse(content_type='text/csv')
@@ -62,7 +72,11 @@ def export_csv(request):
 
 @login_required
 def export_pdf(request):
-    if not request.user.is_staff and request.user.userprofile.role != 'librarian':
+    try:
+        user_role = request.user.userprofile.role
+    except (UserProfile.DoesNotExist, AttributeError):
+        user_role = None
+    if not request.user.is_staff and user_role != 'librarian':
         return HttpResponse('Forbidden', status=403)
 
     buffer = BytesIO()

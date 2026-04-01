@@ -193,3 +193,31 @@ Traceback (most recent call last):
     raise e.__class__(
 TypeError: Field 'id' expected a number but got <SimpleLazyObject: <django.contrib.auth.models.AnonymousUser object at 0x000001E93B757940>>.
 ERROR 2026-02-24 10:01:30,370 basehttp 11048 4760 "GET /books/95/ HTTP/1.1" 500 126175
+ERROR 2026-03-30 01:58:01,741 log 8252 11036 Internal Server Error: /search/
+Traceback (most recent call last):
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\backends\postgresql\psycopg_any.py", line 5, in <module>
+    from psycopg import ClientCursor, IsolationLevel, adapt, adapters, errors, sql
+ModuleNotFoundError: No module named 'psycopg'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\azureadmin\Desktop\LMS_001\portal\views.py", line 539, in search_view
+    .annotate(search=vector, rank=SearchRank(vector, search_query))
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\contrib\postgres\search.py", line 253, in __init__
+    from .fields.array import ArrayField
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\contrib\postgres\fields\__init__.py", line 1, in <module>
+    from .array import *  # NOQA
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\contrib\postgres\fields\array.py", line 4, in <module>
+    from django.contrib.postgres.forms import SimpleArrayField
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\contrib\postgres\forms\__init__.py", line 3, in <module>
+    from .ranges import *  # NOQA
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\contrib\postgres\forms\ranges.py", line 3, in <module>
+    from django.db.backends.postgresql.psycopg_any import (
+  File "C:\Users\azureadmin\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\backends\postgresql\psycopg_any.py", line 77, in <module>
+    from psycopg2 import errors, extensions, sql  # NOQA
+ModuleNotFoundError: No module named 'psycopg2'

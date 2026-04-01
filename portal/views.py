@@ -505,17 +505,20 @@ def search_suggestions(request: HttpRequest):
         return JsonResponse([], safe=False)
     results = []
     if HAS_POSTGRES_SEARCH:
-        # PostgreSQL full-text search for suggestions
-        vector = SearchVector('title', weight='A') + SearchVector('author', weight='B')
-        search_query = SearchQuery(query, search_type='plain')
-        suggestions = (
-            Book.objects
-            .annotate(rank=SearchRank(vector, search_query))
-            .filter(rank__gte=0.01)
-            .order_by('-rank')[:5]
-            .values_list('title', flat=True)
-        )
-        results = list(suggestions)
+        try:
+            # PostgreSQL full-text search for suggestions
+            vector = SearchVector('title', weight='A') + SearchVector('author', weight='B')
+            search_query = SearchQuery(query, search_type='plain')
+            suggestions = (
+                Book.objects
+                .annotate(rank=SearchRank(vector, search_query))
+                .filter(rank__gte=0.01)
+                .order_by('-rank')[:5]
+                .values_list('title', flat=True)
+            )
+            results = list(suggestions)
+        except Exception:
+            results = []
     # Fallback to icontains if FTS returns nothing or not available
     if not results:
         results = list(
@@ -531,16 +534,19 @@ def search_view(request: HttpRequest):
     if query:
         books = None
         if HAS_POSTGRES_SEARCH:
-            # PostgreSQL full-text search with ranking
-            vector = SearchVector('title', weight='A') + SearchVector('author', weight='B') + SearchVector('subject', weight='C')
-            search_query = SearchQuery(query, search_type='plain')
-            books = (
-                Book.objects
-                .annotate(search=vector, rank=SearchRank(vector, search_query))
-                .filter(rank__gte=0.01)
-                .order_by('-rank', '-created_at')
-            )
-            if not books.exists():
+            try:
+                # PostgreSQL full-text search with ranking
+                vector = SearchVector('title', weight='A') + SearchVector('author', weight='B') + SearchVector('subject', weight='C')
+                search_query = SearchQuery(query, search_type='plain')
+                books = (
+                    Book.objects
+                    .annotate(search=vector, rank=SearchRank(vector, search_query))
+                    .filter(rank__gte=0.01)
+                    .order_by('-rank', '-created_at')
+                )
+                if not books.exists():
+                    books = None
+            except Exception:
                 books = None
         # Fallback if FTS yields no results or not available
         if books is None:

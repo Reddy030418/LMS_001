@@ -9,8 +9,14 @@ class DashboardViewsTest(TestCase):
         self.student_user = User.objects.create_user(username='student_test', password='password123', email='student@test.com')
         
         self.dept = Department.objects.create(name='CS', code='CS_101')
-        Profile.objects.create(user=self.admin_user, role='admin', department=self.dept)
-        Profile.objects.create(user=self.student_user, role='student', department=self.dept)
+        admin_profile, _ = Profile.objects.get_or_create(user=self.admin_user)
+        admin_profile.role = 'admin'
+        admin_profile.department = self.dept
+        admin_profile.save()
+        student_profile, _ = Profile.objects.get_or_create(user=self.student_user)
+        student_profile.role = 'student'
+        student_profile.department = self.dept
+        student_profile.save()
 
     def test_dashboard_access_unauthenticated(self):
         response = self.client.get('/dashboard/')

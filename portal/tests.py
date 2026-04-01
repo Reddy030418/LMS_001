@@ -40,12 +40,11 @@ class PortalModelsTest(TestCase):
         self.assertEqual(str(self.book), 'The Great Gatsby')
 
     def test_profile_creation(self):
-        profile = Profile.objects.create(
-            user=self.user,
-            department=self.dept,
-            student_id='PSTU001',
-            role='student'
-        )
+        profile, _ = Profile.objects.get_or_create(user=self.user)
+        profile.department = self.dept
+        profile.student_id = 'PSTU001'
+        profile.role = 'student'
+        profile.save()
         self.assertEqual(profile.user.username, 'portaluser')
         self.assertEqual(profile.role, 'student')
         self.assertEqual(str(profile), 'portaluser')
@@ -125,7 +124,7 @@ class PortalViewsTest(TestCase):
         # Create a book specific for search
         from .models import Book, Department
         dept = Department.objects.create(name='Test Dept')
-        Book.objects.create(title='Unique Searchable Title', author='Author X', department=dept)
+        Book.objects.create(title='Unique Searchable Title', author='Author X', department=dept, isbn='SEARCH001')
         
         response = self.client.get('/search/?q=Searchable')
         self.assertEqual(response.status_code, 200)
@@ -134,8 +133,8 @@ class PortalViewsTest(TestCase):
     def test_advanced_search_filters_correctly(self):
         from .models import Book, Department
         dept = Department.objects.create(name='Physics')
-        Book.objects.create(title='Quantum Mechanics', author='Scientist A', department=dept, available_copies=2)
-        Book.objects.create(title='Classical Mechanics', author='Scientist B', department=dept, available_copies=0)
+        Book.objects.create(title='Quantum Mechanics', author='Scientist A', department=dept, available_copies=2, isbn='PHYS001')
+        Book.objects.create(title='Classical Mechanics', author='Scientist B', department=dept, available_copies=0, isbn='PHYS002')
 
         # Advanced search for available books
         response = self.client.get('/advanced-search/?title=Mechanics&availability=available')
