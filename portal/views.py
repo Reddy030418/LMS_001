@@ -40,7 +40,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Table, Para
 from reportlab.lib import colors
 import csv
 import logging
-from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource, BookReservation
+from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource, BookReservation, InterLibraryLoanRequest
 from .forms import BookForm, IssueForm, ReturnForm, BookRequestForm, ProfileForm
 from .utils import calculate_fine
 from .services.recommender import get_recommendations
@@ -103,8 +103,9 @@ def signup_view(request: HttpRequest):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            Profile.objects.create(user=user)
-            login(request, user)
+            # A post_save signal also provisions profiles; keep signup idempotent.
+            Profile.objects.get_or_create(user=user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('home')
     else:
         form = UserCreationForm()
@@ -270,9 +271,12 @@ def admin_dashboard(request: HttpRequest):
     # System KPIs
     total_books = Book.objects.count()
     total_copies = Book.objects.aggregate(total=Sum('total_copies'))['total'] or 0
+    available_books = Book.objects.filter(available_copies__gt=0).count()
     active_students = Profile.objects.filter(role='student', is_active_member=True).count()
     total_issues = Transaction.objects.count()
     active_issues = Transaction.objects.filter(returned_on__isnull=True).count()
+    requested_books = BookRequest.objects.count()
+    pending_requests_count = BookRequest.objects.filter(status='PENDING').count()
     overdue_count = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).count()
     total_fine_collected = Transaction.objects.filter(returned_on__isnull=False, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total'] or 0
     pending_fines = Transaction.objects.filter(returned_on__isnull=True, due_date__lt=timezone.now().date()).aggregate(total=Sum('fine_amount'))['total'] or 0
@@ -285,6 +289,7 @@ def admin_dashboard(request: HttpRequest):
 
     # Most issued books
     most_issued = Transaction.objects.values('book__title').annotate(total_issues=Count('id')).order_by('-total_issues')[:10]
+    recent_requests = BookRequest.objects.select_related('book', 'user').order_by('-created_at')[:10]
 
     # Monthly trends
     monthly_trends = Transaction.objects.annotate(month=TruncMonth('issued_on')).values('month').annotate(count=Count('id')).order_by('month')
@@ -292,15 +297,19 @@ def admin_dashboard(request: HttpRequest):
     context = {
         'total_books': total_books,
         'total_copies': total_copies,
+        'available_books': available_books,
         'active_students': active_students,
         'total_issues': total_issues,
         'active_issues': active_issues,
+        'requested_books': requested_books,
+        'pending_requests_count': pending_requests_count,
         'overdue_count': overdue_count,
         'total_fine_collected': total_fine_collected,
         'pending_fines': pending_fines,
         'overdue_books': overdue_books,
         'dept_issues': dept_issues,
         'most_issued': most_issued,
+        'recent_requests': recent_requests,
         'monthly_trends': monthly_trends,
     }
     return render(request, 'portal/admin_dashboard.html', context)
@@ -1230,45 +1239,26 @@ def pay_fine(request: HttpRequest):
             messages.error(request, str(e))
     return redirect('student_dashboard')
 
-# Stub views to prevent URL resolution errors
-def contact(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def opening_hours(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def ask_librarian(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def book_study_room(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def news(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def department_list(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def department_books(request: HttpRequest, dept_id):
-    return HttpResponse("This feature is coming soon.")
-
-def trending_books(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def new_arrivals(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def rare_books(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def theses_dissertations(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
-def anu_archives(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
-
+@login_required
 def request_ill(request: HttpRequest):
-    return HttpResponse("This feature is coming soon.")
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        if not title:
+            messages.error(request, 'Title is required for an inter-library loan request.')
+            return redirect('my_books')
+
+        InterLibraryLoanRequest.objects.create(
+            user=request.user,
+            title=title,
+            author=request.POST.get('author', '').strip() or None,
+            isbn=request.POST.get('isbn', '').strip() or None,
+            publisher_info=request.POST.get('publisher_info', '').strip() or None,
+        )
+        messages.success(request, 'Your inter-library loan request has been submitted.')
+        return redirect('my_books')
+
+    messages.info(request, 'Submit inter-library loan requests from the request form.')
+    return redirect('my_books')
 
 
 @login_required

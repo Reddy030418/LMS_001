@@ -1,5 +1,15 @@
 from django.contrib import admin
-from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource
+from .models import (
+    Book,
+    Department,
+    Transaction,
+    BookRequest,
+    Profile,
+    NewsItem,
+    Eresource,
+    BookReservation,
+    InterLibraryLoanRequest,
+)
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
@@ -38,6 +48,20 @@ class NewsItemAdmin(admin.ModelAdmin):
 
 @admin.register(Eresource)
 class EresourceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'letter', 'url')
+    list_display = ('name', 'letter', 'url', 'file')
     search_fields = ('name',)
     list_filter = ('letter',)
+
+
+@admin.register(BookReservation)
+class BookReservationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'book', 'status', 'created_at', 'available_at', 'expires_at')
+    search_fields = ('user__username', 'book__title')
+    list_filter = ('status', 'created_at')
+
+
+@admin.register(InterLibraryLoanRequest)
+class InterLibraryLoanRequestAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'author', 'isbn', 'status', 'requested_on')
+    search_fields = ('title', 'user__username', 'author', 'isbn')
+    list_filter = ('status', 'requested_on')
