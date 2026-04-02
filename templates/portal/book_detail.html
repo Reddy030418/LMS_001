@@ -116,6 +116,17 @@
             <button class="btn btn-primary" disabled style="background:var(--accent-amber) !important;border-color:var(--accent-amber) !important;">
               <i class="fa-solid fa-hourglass-half me-1"></i>Request pending approval
             </button>
+          {% elif has_reservation %}
+            <button class="btn btn-primary" disabled style="background:var(--accent-amber) !important;border-color:var(--accent-amber) !important;">
+              <i class="fa-solid fa-clock me-1"></i>Reserved by you
+            </button>
+          {% elif can_reserve %}
+            <form method="post" action="{% url 'reserve_book' book.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-lg" style="background:var(--accent-amber) !important;border-color:var(--accent-amber) !important;">
+                <i class="fa-solid fa-clock me-1"></i>Reserve Book
+              </button>
+            </form>
           {% elif book.available_copies <= 0 %}
             <button class="btn btn-primary" disabled style="opacity:0.5;">
               <i class="fa-solid fa-ban me-1"></i>Not available (all copies issued)

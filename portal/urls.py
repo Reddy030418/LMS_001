@@ -15,6 +15,7 @@ urlpatterns = [
     path('request-book/<int:book_id>/', views.request_book, name='request_book'),
     path('issue-book/', views.issue_book, name='issue_book'),
     path('return-book/<int:tx_id>/', views.return_book, name='return_book'),
+    path('transaction/<int:tx_id>/calendar/', views.download_ics, name='download_ics'),
     path('export-transactions-csv/', views.export_transactions_csv, name='export_transactions_csv'),
     path('export-transactions-pdf/', views.export_transactions_pdf, name='export_transactions_pdf'),
     path('search-suggestions/', views.search_suggestions, name='search_suggestions'),
@@ -23,6 +24,7 @@ urlpatterns = [
     path('my-requests/', views.my_requests, name='my_requests'),
     path('manage-requests/', views.manage_requests, name='manage_requests'),
     path('eresources/<str:letter>/', views.eresource_list_view, name='eresource_list'),
+    path('eresources/<int:e_id>/read/', views.read_eresource, name='read_eresource'),
     path('contact/', views.contact, name='contact'),
     path('opening-hours/', views.opening_hours, name='opening_hours'),
     path('ask-librarian/', views.ask_librarian, name='ask_librarian'),
@@ -35,8 +37,11 @@ urlpatterns = [
     path('rare-books/', views.rare_books, name='rare_books'),
     path('theses-dissertations/', views.theses_dissertations, name='theses_dissertations'),
     path('anu-archives/', views.anu_archives, name='anu_archives'),
+    path('fines/pay/', views.pay_fine, name='pay_fine'),
+    path('ill/request/', views.request_ill, name='request_ill'),
 
     # API Endpoints
+    path('api/chatbot/', views.chatbot_api, name='chatbot_api'),
     path('api/dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
     path('api/department-issues/', views.department_issues_api, name='department_issues_api'),
     path('api/monthly-trends/', views.monthly_trends_api, name='monthly_trends_api'),

@@ -1,6 +1,7 @@
 # ANU LMS - Library Management System TODO
 
 ## Project Overview
+
 - **Name**: Acharya Nagarjuna University Library Management System (ANU LMS)
 - **Framework**: Django 4.2.7
 - **Database**: SQLite (development) / PostgreSQL (production)
@@ -15,7 +16,9 @@
 - **Current Status**: Core functionality implemented with recent enhancements in recommendations and async email notifications.
 
 ## Completed Tasks
+
 ### Core Functionality
+
 - [x] User registration and authentication with role-based access (Student, Librarian, Admin)
 - [x] Book catalog management (CRUD operations for books)
 - [x] Book search functionality (title, author, subject, advanced search)
@@ -25,6 +28,7 @@
 - [x] Basic recommendations system
 
 ### Performance & Optimization
+
 - [x] Database indexing on key fields
 - [x] Query optimization with select_related
 - [x] Caching implementation (LocMemCache, per-user recommendation cache)
@@ -33,6 +37,7 @@
 - [x] Logging setup
 
 ### Security & Configuration
+
 - [x] Environment variable configuration for secrets
 - [x] Rate limiting on search endpoints
 - [x] DEBUG=False for production
@@ -40,147 +45,104 @@
 - [x] Database connection pooling
 
 ### Testing
+
 - [x] Unit tests for models, views, and forms
 - [x] Integration tests for key workflows
 - [x] API endpoint testing
 
 ### Documentation
+
 - [x] README.md with setup instructions
 - [x] API documentation
 - [x] Contribution guidelines
 
 ### Recent Enhancements
+
 - [x] Improved recommendations with department popularity and cache invalidation
 - [x] Async email notifications using Celery (overdue reminders, request approvals)
+- [x] User Profile Management (profile details, picture, password)
+- [x] Responsive Design (mobile-friendly, adaptive layouts)
+- [x] User Experience (loading indicators, error messages, dark mode)
 
-## Pending Tasks
+## Pending Tasks (Prioritized Roadmap)
 
-### Feature Enhancements
-- [x] **User Profile Management**
-  - [x] Allow students to update personal details (name, contact info)
-  - [x] Profile picture upload
-  - [x] Change password functionality
-- [ ] **Book Reservations**
-  - Implement reservation queue for unavailable books
-  - Notification system for when reserved books become available
-  - Reservation expiry and cancellation
-- [ ] **Advanced Search & Filtering**
-  - Add filters for publication year, language, book type
-  - Faceted search with multiple criteria
-  - Search result sorting options
-- [ ] **Analytics Dashboard**
-  - Enhanced admin dashboard with charts
-  - User activity trends
-  - Book popularity analytics
-  - Department-wise usage statistics
-- [ ] **E-Resources Management**
-  - Upload and manage digital resources
-  - Access tracking and permissions
-  - Integration with external e-book platforms
+### 🥇 Priority 1: High-Impact Showpiece Features & Core Completion
 
-### UI/UX Improvements
-- [x] **Responsive Design**
-  - [x] Mobile-friendly templates
-  - [x] Touch-friendly interface elements
-  - [x] Adaptive layouts for different screen sizes
-- [x] **User Experience**
-  - [x] Loading indicators for AJAX calls
-  - [x] Better error messages and validation feedback
-  - [x] Improved navigation and breadcrumbs
-  - [x] Dark mode option
-- [ ] **Accessibility**
-  - WCAG compliance
-  - Screen reader support
-  - Keyboard navigation
-
-### Security Enhancements
-- [ ] **Authentication**
-  - Two-factor authentication (2FA)
-  - Password reset functionality
-  - Account lockout after failed attempts
-- [ ] **HTTPS Implementation**
-  - SSL certificate configuration
-  - Secure cookie settings
-  - HSTS headers
-- [ ] **Data Protection**
-  - Sensitive data encryption
-  - GDPR compliance features
-  - Audit logging for sensitive operations
-
-### Testing & Quality Assurance
+- [x] **AI "Librarian" Chatbot (RAG)**
+  - [x] Implement real-time AI assistant using OpenAI/Claude APIs.
+  - [x] Provide contextual book recommendations based on natural language queries.
 - [ ] **Manual Testing**
-  - Verify all user roles functionality
-  - Mobile responsiveness testing
-  - Cross-browser compatibility
-- [ ] **Performance Testing**
-  - Load testing with Locust (target: 100 concurrent users)
-  - Database query optimization
-  - Caching effectiveness measurement
-- [ ] **Automated Testing**
-  - Increase test coverage to 80%+
-  - End-to-end testing with Selenium
-  - API testing expansion
+  - Verify all user roles functionality, mobile responsiveness, and cross-browser compatibility.
+- [x] **Book Reservations**
+  - [x] Implement reservation queue for unavailable books
+  - [x] Notification system for when reserved books become available
+  - [x] Reservation expiry and cancellation
+- [x] **Advanced Search & Filtering**
+  - [x] Add filters for publication year, language, book type; faceted search and sorting.
 
-### DevOps & Deployment
-- [ ] **CI/CD Pipeline**
-  - GitHub Actions for automated testing
-  - Automated deployment to staging/production
-  - Code quality checks (linting, security scanning)
+### 🥈 Priority 2: Engagement, Real-Time Interactivity, and Security
+
+- [x] **Live WebSockets Notifications**
+  - [x] Use Django Channels for instant browser notifications on approvals/returns.
+- [x] **Gamification & Student Engagement**
+  - [x] Implement Reading Streaks & Badges (e.g., "Research Scholar", "Night Owl").
+  - [x] Create Departmental Leaderboards and Peer Reviews/Reading Lists.
+- [x] **Authentication & Security**
+  - [x] Two-factor authentication (2FA), password reset, failure lockout.
+  - [x] HTTPS implementation (SSL, HSTS, secure cookies).
+  - [x] GDPR compliance and audit logging.
+
+### 🥉 Priority 3: Professional Architecture (Senior Level) & Enterprise Integrations
+
+- [x] **Full Dockerization**
+  - [x] Create `docker-compose.yml` for isolated containers (web app, Celery worker, Redis, PostGIS/PostgreSQL).
+- [x] **Aggressive Caching Strategy**
+  - [x] Implement Redis caching for the book catalog and dashboard statistics.
+- [x] **Continuous Integration (CI/CD)**
+  - [x] GitHub Actions for automated testing, code quality checks, and deployments.
+- [x] **Single Sign-On (SSO)**
+  - [x] Integrate OAuth2 (Google Workspace/Microsoft Entra ID) for instant `.edu` logins.
+- [x] **Automated Penalty Payments**
+  - [x] Integrate Stripe/Razorpay APIs for overdue fines.
+- [x] **Analytics Dashboard**
+  - [x] User activity trends, book popularity, and department-wise usage statistics.
+
+### 🔄 Priority 4: Smart Automation & Extended Functionality
+
+- [x] **Automated Reminders (Celery)**
+  - [x] Use Celery + Redis to send daily email warnings for upcoming due dates (3 days before, 1 day before).
+- [x] **Inter-Library Loan System (ILL)**
+  - [x] Form workflow for students to request books outside the local inventory; manage approval pipelines.
+- [x] **In-Browser E-Reader**
+  - [x] Integrate open-source EPUB/PDF reader (ePub.js/PDF.js).
+- [x] **Calendar Integration**
+  - [x] Export return deadlines or study room slots to Google/Apple Calendar.
+- [x] **E-Resources Management**
+  - [x] Upload/manage digital resources, permissions, and external platform integration.
+
+### 🛠️ Priority 5: DevOps, Testing & Maintenance (Backlog)
+
+- [ ] **Performance & Automated Testing**
+  - Load testing (Locust), Selenium End-to-End coverage (80%+), API testing expansion.
 - [ ] **Monitoring & Observability**
-  - Django Silk for query profiling
-  - Prometheus/Grafana integration
-  - Error tracking and alerting
+  - Django Silk (query profiling), Prometheus/Grafana, Error tracking.
 - [ ] **Backup & Recovery**
-  - Automated database backups
-  - Backup verification and restoration testing
-  - Disaster recovery plan
-- [ ] **Environment Management**
-  - .env file configuration
-  - Separate settings for dev/staging/prod
-  - Docker containerization
-
-### Documentation & Maintenance
-- [ ] **Code Quality**
-  - Code refactoring for better organization
-  - Type hints implementation
-  - DRY principle adherence
-  - Code documentation
-- [ ] **Dependency Management**
-  - Regular package updates for security
-  - Vulnerability scanning
-  - Dependency cleanup
-- [ ] **User Documentation**
-  - User manuals for students and librarians
-  - Video tutorials
-  - FAQ section
-- [ ] **API Documentation**
-  - Comprehensive API docs with examples
-  - Interactive API explorer (Swagger/OpenAPI)
-  - API versioning strategy
-
-## Priority Roadmap
-1. **High Priority** (Next Sprint)
-   - User profile management
-   - UI responsiveness improvements
-   - Manual testing completion
-
-2. **Medium Priority**
-   - Book reservations
-   - Advanced search filters
-   - 2FA implementation
-
-3. **Low Priority**
-   - Analytics dashboard
-   - Performance testing
-   - Full CI/CD setup
+  - Automated backups, restoration testing, disaster recovery plan.
+- [ ] **Code Quality & Documentation**
+  - Refactoring, type hints, dependency management/cleanup.
+  - Comprehensive API docs (Swagger/OpenAPI), user manuals, video tutorials.
+- [ ] **Accessibility**
+  - WCAG compliance, screen reader support, keyboard navigation.
 
 ## Technical Debt
+
 - [ ] Refactor views.py for better separation of concerns
 - [ ] Implement proper error handling across all views
 - [ ] Standardize API response formats
 - [ ] Add comprehensive input validation
 
 ## Future Considerations
+
 - [ ] Mobile app development (React Native/Flutter)
 - [ ] Integration with university systems (SIS, LDAP)
 - [ ] Multi-language support (i18n)

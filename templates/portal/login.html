@@ -1,5 +1,6 @@
 {% extends 'portal/base.html' %}
 {% load static %}
+{% load socialaccount %}
 
 {% block title %}Log In - ANU LMS{% endblock %}
 
@@ -51,6 +52,16 @@
           <button type="submit" class="btn btn-primary w-100 mb-3" style="padding:0.75rem;font-size:1rem;">
             <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
           </button>
+
+          <div class="d-flex align-items-center mb-3">
+              <hr class="flex-grow-1 border-secondary">
+              <span class="mx-2 text-muted" style="font-size: 0.8rem;">or connect with</span>
+              <hr class="flex-grow-1 border-secondary">
+          </div>
+
+          <a href="{% provider_login_url 'google' %}" class="btn w-100 mb-4" style="background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary); padding:0.75rem;">
+            <i class="fa-brands fa-google me-2" style="color:#ffffff;"></i> Continue with .edu SSO
+          </a>
 
           <p class="text-center text-muted" style="font-size:0.85rem;">
             Don't have an account?

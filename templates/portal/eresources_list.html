@@ -29,22 +29,38 @@
   {% if eresources %}
   <div class="resources-grid">
     {% for resource in eresources %}
-    <a href="{{ resource.url }}" target="_blank" rel="noopener" class="text-decoration-none">
-      <div class="resource-card">
-        <div class="resource-card-inner">
-          <div class="resource-icon">
-            <i class="fa-solid fa-database"></i>
-          </div>
-          <div class="resource-text">
-            <h3>{{ resource.name }}</h3>
-            {% if resource.description %}
-              <p>{{ resource.description|truncatechars:100 }}</p>
+    <div class="resource-card p-3" style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); margin-bottom: 1rem;">
+      <div class="d-flex align-items-start gap-3">
+        <div class="resource-icon p-3" style="background: rgba(99, 102, 241, 0.1); border-radius: 8px; color: var(--accent-indigo);">
+          {% if resource.file %}
+          <i class="fa-solid fa-file-pdf fa-2x"></i>
+          {% else %}
+          <i class="fa-solid fa-database fa-2x"></i>
+          {% endif %}
+        </div>
+        <div class="flex-grow-1">
+          <h3 class="h5 mb-1">{{ resource.name }}</h3>
+          {% if resource.description %}
+            <p class="text-muted small mb-2">{{ resource.description|truncatechars:150 }}</p>
+          {% endif %}
+          
+          <div class="d-flex gap-2 mt-2">
+            {% if resource.file %}
+            <a href="{% url 'read_eresource' resource.id %}" class="btn btn-sm" style="background: var(--accent-indigo); color: white;">
+              <i class="fa-solid fa-book-open me-1"></i> Read Online
+            </a>
+            <a href="{{ resource.file.url }}" download class="btn btn-sm btn-outline-secondary">
+              <i class="fa-solid fa-download me-1"></i> Download PDF
+            </a>
+            {% elif resource.url %}
+            <a href="{{ resource.url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+              <i class="fa-solid fa-external-link-alt me-1"></i> External Link
+            </a>
             {% endif %}
-            <small style="color:var(--accent-indigo);"><i class="fa-solid fa-external-link me-1"></i>Access Resource</small>
           </div>
         </div>
       </div>
-    </a>
+    </div>
     {% endfor %}
   </div>
   {% else %}

@@ -16,6 +16,16 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Environment Configuration
+from dotenv import load_dotenv
+load_dotenv()
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
+# Stripe Integration
+STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "pk_test_sample")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "sk_test_sample")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -32,6 +42,7 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -44,6 +55,13 @@ INSTALLED_APPS = [
     'dashboard',
     'portal',
     'django_celery_beat',
+    'channels',
+    'axes',
+    'auditlog',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +73,50 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_ratelimit.middleware.RatelimitMiddleware",
+    "auditlog.middleware.AuditlogMiddleware",
+    "axes.middleware.AxesMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
+
+# Allauth Configuration
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_REQUIRED = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Security & HTTPS Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Failure Lockout Context (Axes)
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # 1 hour lockout
 
 ROOT_URLCONF = "anu_lms.urls"
 
@@ -75,6 +136,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "anu_lms.wsgi.application"
+ASGI_APPLICATION = "anu_lms.asgi.application"
+
+# Channel Layers
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379/0')],
+        },
+    },
+}
 
 
 # Database
@@ -85,6 +157,22 @@ DATABASES = {
     "default": {
         "ENGINE": os.environ.get('DB_ENGINE', "django.db.backends.sqlite3"),
         "NAME": os.environ.get('DB_NAME', BASE_DIR / "db.sqlite3"),
+    }
+}
+
+if "postgresql" in str(DATABASES["default"].get("ENGINE", "")):
+    DATABASES['default'].update({
+        "USER": os.environ.get('DB_USER', ''),
+        "PASSWORD": os.environ.get('DB_PASSWORD', ''),
+        "HOST": os.environ.get('DB_HOST', 'localhost'),
+        "PORT": os.environ.get('DB_PORT', '5432'),
+    })
+
+# Caching Strategy (Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
     }
 }
 

@@ -15,15 +15,15 @@
   <div class="dashboard-card mb-4">
     <form method="get" action="{% url 'advanced_search' %}">
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="title" class="form-label">Title</label>
           <input type="text" class="form-control" id="title" name="title" value="{{ title }}" placeholder="Search by title...">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="author" class="form-label">Author</label>
           <input type="text" class="form-control" id="author" name="author" value="{{ author }}" placeholder="Search by author...">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="department" class="form-label">Department</label>
           <select class="form-select" id="department" name="department">
             <option value="">All Departments</option>
@@ -32,20 +32,64 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="category" class="form-label">Category / Subject</label>
-          <input type="text" class="form-control" id="category" name="category" value="{{ category_name }}" placeholder="e.g. Computer Science">
-        </div>
-        <div class="col-md-4">
-          <label for="availability" class="form-label">Availability</label>
-          <select class="form-select" id="availability" name="availability">
-            <option value="">All</option>
-            <option value="available" {% if availability == 'available' %}selected{% endif %}>Available Only</option>
-            <option value="issued" {% if availability == 'issued' %}selected{% endif %}>Issued Out</option>
+          <select class="form-select" id="category" name="category">
+            <option value="">All Categories</option>
+            {% for cat in categories %}
+              <option value="{{ cat }}" {% if cat == category_name %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
           </select>
         </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <button type="submit" class="btn btn-primary w-100" style="padding:0.6rem;">
+        <div class="col-md-3">
+          <label for="language" class="form-label">Language</label>
+          <select class="form-select" id="language" name="language">
+            <option value="">All Languages</option>
+            {% for lang in languages %}
+              <option value="{{ lang }}" {% if lang == language %}selected{% endif %}>{{ lang }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="book_type" class="form-label">Book Type</label>
+          <select class="form-select" id="book_type" name="book_type">
+            <option value="">All Types</option>
+            {% for type in book_types %}
+              <option value="{{ type }}" {% if type == book_type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="publication_year" class="form-label">Pub Year</label>
+          <select class="form-select" id="publication_year" name="publication_year">
+            <option value="">All Years</option>
+            {% for year in publication_years %}
+              <option value="{{ year }}" {% if year|stringformat:"i" == publication_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="availability" class="form-label">Availability</label>
+          <select class="form-select" id="availability" name="availability">
+            <option value="">All Outputs</option>
+            <option value="available" {% if availability == 'available' %}selected{% endif %}>Available</option>
+            <option value="issued" {% if availability == 'issued' %}selected{% endif %}>Issued</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="sort_by" class="form-label">Sort By</label>
+          <select class="form-select" id="sort_by" name="sort_by">
+            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest Added</option>
+            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest Added</option>
+            <option value="-publication_year" {% if sort_by == '-publication_year' %}selected{% endif %}>Newest Published</option>
+            <option value="publication_year" {% if sort_by == 'publication_year' %}selected{% endif %}>Oldest Published</option>
+            <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+            <option value="-title" {% if sort_by == '-title' %}selected{% endif %}>Title (Z-A)</option>
+          </select>
+        </div>
+        <div class="col-12 d-flex justify-content-end align-items-end mt-3">
+          <a href="{% url 'advanced_search' %}" class="btn btn-outline-secondary me-2">Clear</a>
+          <button type="submit" class="btn btn-primary" style="padding:0.5rem 2rem;">
             <i class="fa-solid fa-search me-2"></i>Search
           </button>
         </div>
@@ -53,9 +97,9 @@
     </form>
   </div>
 
-  {% if results %}
+  {% if page_obj %}
   <div class="row g-3 search-results">
-    {% for book in results %}
+    {% for book in page_obj %}
     <div class="col-lg-3 col-md-4 col-6">
       <div class="card h-100">
         {% if book.cover_image %}
@@ -80,8 +124,44 @@
         </div>
       </div>
     </div>
+    {% empty %}
+      <div class="col-12 text-center py-5">
+        <p class="text-muted">No books found matching your criteria.</p>
+      </div>
     {% endfor %}
   </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Page navigation" class="mt-5">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&title={{ title|urlencode }}&author={{ author|urlencode }}&department={{ department_name|urlencode }}&category={{ category_name|urlencode }}&language={{ language|urlencode }}&book_type={{ book_type|urlencode }}&publication_year={{ publication_year }}&availability={{ availability }}&sort_by={{ sort_by }}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% endif %}
+
+      {% for i in page_obj.paginator.page_range %}
+        {% if page_obj.number == i %}
+          <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+        {% elif i > page_obj.number|add:"-3" and i < page_obj.number|add:"3" %}
+          <li class="page-item"><a class="page-link" href="?page={{ i }}&title={{ title|urlencode }}&author={{ author|urlencode }}&department={{ department_name|urlencode }}&category={{ category_name|urlencode }}&language={{ language|urlencode }}&book_type={{ book_type|urlencode }}&publication_year={{ publication_year }}&availability={{ availability }}&sort_by={{ sort_by }}">{{ i }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}&title={{ title|urlencode }}&author={{ author|urlencode }}&department={{ department_name|urlencode }}&category={{ category_name|urlencode }}&language={{ language|urlencode }}&book_type={{ book_type|urlencode }}&publication_year={{ publication_year }}&availability={{ availability }}&sort_by={{ sort_by }}" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+  
   {% endif %}
 </div>
 {% endblock %}

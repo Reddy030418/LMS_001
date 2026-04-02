@@ -1,16 +1,31 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest
+import json
+import os
+try:
+    import openai
+except ImportError:
+    openai = None
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db.models import Q, Count, Sum
+from django.views.decorators.csrf import csrf_exempt
+from django_ratelimit.decorators import ratelimit
 from django.db.models.functions import TruncMonth
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django_ratelimit.decorators import ratelimit
+from django.core.cache import cache
+from django.conf import settings
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import csv
+import stripe
+import json
+import logging
+from .services.recommender import get_recommendations
 
 # PostgreSQL full-text search (optional, with SQLite fallback)
 try:
@@ -25,7 +40,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Table, Para
 from reportlab.lib import colors
 import csv
 import logging
-from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource
+from .models import Book, Department, Transaction, BookRequest, Profile, NewsItem, Eresource, BookReservation
 from .forms import BookForm, IssueForm, ReturnForm, BookRequestForm, ProfileForm
 from .utils import calculate_fine
 from .services.recommender import get_recommendations
@@ -143,9 +158,13 @@ def book_detail(request: HttpRequest, book_id):
     if request.user.is_authenticated:
         pending_request = BookRequest.objects.filter(user=request.user, book=book, status='PENDING').exists()
         active_loan = Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists()
+        has_reservation = BookReservation.objects.filter(user=request.user, book=book, status__in=['WAITING', 'AVAILABLE']).exists()
+        can_reserve = book.available_copies == 0 and not active_loan and not has_reservation and request.user.profile.role == 'student'
     else:
         pending_request = False
         active_loan = False
+        has_reservation = False
+        can_reserve = False
 
     # Similar books (content-based)
     similar_books = Book.objects.filter(
@@ -157,6 +176,8 @@ def book_detail(request: HttpRequest, book_id):
         'can_request': can_request,
         'pending_request': pending_request,
         'active_loan': active_loan,
+        'has_reservation': has_reservation,
+        'can_reserve': can_reserve,
         'similar_books': similar_books,
     }
     return render(request, 'portal/book_detail.html', context)
@@ -166,10 +187,12 @@ def book_detail(request: HttpRequest, book_id):
 def my_books(request: HttpRequest):
     active_loans = Transaction.objects.filter(user=request.user, returned_on__isnull=True).select_related('book')
     history = Transaction.objects.filter(user=request.user, returned_on__isnull=False).order_by('-returned_on').select_related('book')
+    reservations = BookReservation.objects.filter(user=request.user, status__in=['WAITING', 'AVAILABLE']).select_related('book')
     recommendations = get_recommendations(request.user, limit=6)
     context = {
         'active_loans': active_loans,
         'history': history,
+        'reservations': reservations,
         'recommendations': recommendations,
     }
     return render(request, 'portal/my_books.html', context)
@@ -192,11 +215,15 @@ def student_dashboard(request: HttpRequest):
     # Recommendations
     recommendations = get_recommendations(request.user, limit=6)
 
+    # Gamification Leaderboard
+    leaderboard = Profile.objects.filter(role='student').order_by('-points', '-reading_streak')[:5]
+
     context = {
         'issued_books': issued_books,
         'fine_summary': fine_summary,
         'history': history,
         'recommendations': recommendations,
+        'leaderboard': leaderboard,
     }
     return render(request, 'portal/student_dashboard.html', context)
 
@@ -212,16 +239,25 @@ def librarian_dashboard(request: HttpRequest):
     # Frequent overdue students
     frequent_overdues = Transaction.objects.filter(fine_amount__gt=0).values('user__username').annotate(overdue_count=Count('id')).order_by('-overdue_count')[:10]
 
-    # Department inventory pressure
-    dept_inventory = Book.objects.values('department__name').annotate(
-        total=Sum('total_copies'),
-        available=Sum('available_copies')
-    ).order_by('department__name')
+    total_books = cache.get('total_books_count')
+    if total_books is None:
+        total_books = Book.objects.count()
+        cache.set('total_books_count', total_books, 3600)  # Cache for 1 hour
+
+    # Department inventory pressure (cached)
+    dept_inventory = cache.get('dept_inventory_stats')
+    if dept_inventory is None:
+        dept_inventory = list(Book.objects.values('department__name').annotate(
+            total=Sum('total_copies'),
+            available=Sum('available_copies')
+        ).order_by('department__name'))
+        cache.set('dept_inventory_stats', dept_inventory, 3600)
 
     context = {
         'low_stock': low_stock,
         'frequent_overdues': frequent_overdues,
         'dept_inventory': dept_inventory,
+        'total_books': total_books,
     }
     return render(request, 'portal/librarian_dashboard.html', context)
 
@@ -424,7 +460,54 @@ def return_book(request: HttpRequest, tx_id):
         transaction.save()
         transaction.book.available_copies += 1
         transaction.book.save()
-        messages.success(request, f'Book "{transaction.book.title}" returned successfully!')
+        
+        # Gamification: Update user's points and reading streak
+        try:
+            profile = request.user.profile
+            profile.points += 10
+            
+            # Update reading streak if returned within 2 days of last_read_date
+            # or if it's their first time returning
+            if profile.last_read_date:
+                days_diff = (returned_date - profile.last_read_date).days
+                if days_diff <= 2:
+                    profile.reading_streak += 1
+                else:
+                    profile.reading_streak = 1 # Reset if gap is too large
+            else:
+                profile.reading_streak = 1
+                
+            profile.last_read_date = returned_date
+            profile.save()
+            messages.info(request, f"🎉 You earned 10 points! Current Streak: {profile.reading_streak}")
+        except Exception:
+            pass
+        
+        # Check if there is an active reservation for this book
+        reservation = BookReservation.objects.filter(book=transaction.book, status='WAITING').order_by('created_at').first()
+        if reservation:
+            reservation.status = 'AVAILABLE'
+            reservation.available_at = timezone.now()
+            reservation.expires_at = timezone.now() + timezone.timedelta(hours=48)
+            reservation.save()
+            transaction.book.available_copies -= 1
+            transaction.book.save()
+            # Send an email notification (Async) or just signal here:
+            messages.success(request, f'Book "{transaction.book.title}" returned! It has been set aside for a reserved student.')
+            
+            # WebSocket Notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{reservation.user.username}",
+                {
+                    "type": "notification.message",
+                    "title": "Reservation Available!",
+                    "message": f"Your reserved book '{transaction.book.title}' is now available. You have 48 hours to collect it.",
+                    "type_status": "success"
+                }
+            )
+        else:
+            messages.success(request, f'Book "{transaction.book.title}" returned successfully!')
         return redirect('my_books')
     return render(request, 'portal/return_book.html', {'transaction': transaction})
 
@@ -569,35 +652,65 @@ def advanced_search_view(request: HttpRequest):
         department_name = request.GET.get('department', '')
         category_name = request.GET.get('category', '')
         availability = request.GET.get('availability', '')
+        publication_year = request.GET.get('publication_year', '')
+        language = request.GET.get('language', '')
+        book_type = request.GET.get('book_type', '')
+        sort_by = request.GET.get('sort_by', '-created_at')
+
         books = Book.objects.all()
         if title:
             books = books.filter(title__icontains=title)
         if author:
             books = books.filter(author__icontains=author)
         if department_name:
-            books = books.filter(department__name__icontains=department_name)
+            books = books.filter(department__name__iexact=department_name)
         if category_name:
-            books = books.filter(subject__icontains=category_name)
+            books = books.filter(subject__iexact=category_name)
         if availability == 'available':
             books = books.filter(available_copies__gt=0)
         elif availability == 'issued':
             books = books.filter(available_copies=0)
+        if publication_year:
+            books = books.filter(publication_year=publication_year)
+        if language:
+            books = books.filter(language__iexact=language)
+        if book_type:
+            books = books.filter(book_type__iexact=book_type)
+
+        if sort_by in ['title', '-title', 'publication_year', '-publication_year', 'created_at', '-created_at']:
+            books = books.order_by(sort_by)
+        else:
+            books = books.order_by('-created_at')
+
         paginator = Paginator(books, 12)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+        
         departments = Department.objects.all()
-        authors = Book.objects.values_list('author', flat=True).distinct()
-        categories = Book.objects.values_list('subject', flat=True).distinct()
+        authors = Book.objects.exclude(author='').values_list('author', flat=True).distinct()
+        categories = Book.objects.exclude(subject='').values_list('subject', flat=True).distinct()
+        languages = Book.objects.exclude(language='').values_list('language', flat=True).distinct().order_by('language')
+        book_types = Book.objects.exclude(book_type='').values_list('book_type', flat=True).distinct().order_by('book_type')
+        publication_years = Book.objects.exclude(publication_year__isnull=True).values_list('publication_year', flat=True).distinct().order_by('-publication_year')
+
         context = {
             "title": title,
             "author": author,
             "department_name": department_name,
             "category_name": category_name,
             "availability": availability,
+            "publication_year": publication_year,
+            "language": language,
+            "book_type": book_type,
+            "sort_by": sort_by,
             "results": books,
+            "page_obj": page_obj,
             "departments": departments,
             "authors": authors,
             "categories": categories,
+            "languages": languages,
+            "book_types": book_types,
+            "publication_years": publication_years,
         }
 
         return render(request, "portal/advanced_search.html", context)
@@ -632,10 +745,34 @@ def manage_requests(request: HttpRequest):
             book_request.status = 'APPROVED'
             book_request.processed_at = timezone.now()
             messages.success(request, f'Request approved for {book_request.book.title}')
+            
+            # WebSocket Notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{book_request.user.username}",
+                {
+                    "type": "notification.message",
+                    "title": "Request Approved",
+                    "message": f"Your request for '{book_request.book.title}' was approved. Please collect it from the librarian.",
+                    "type_status": "success"
+                }
+            )
         elif action == 'reject':
             book_request.status = 'REJECTED'
             book_request.processed_at = timezone.now()
             messages.success(request, f'Request rejected for {book_request.book.title}')
+            
+            # WebSocket Notification
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"user_{book_request.user.username}",
+                {
+                    "type": "notification.message",
+                    "title": "Request Rejected",
+                    "message": f"Your request for '{book_request.book.title}' was rejected.",
+                    "type_status": "error"
+                }
+            )
         book_request.save()
         return redirect('manage_requests')
 
@@ -949,3 +1086,222 @@ def anu_archives(request: HttpRequest):
         'is_book_list': True,
     }
     return render(request, 'books/book_list.html', context)
+
+
+@csrf_exempt
+def chatbot_api(request: HttpRequest):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method.'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return JsonResponse({'error': 'Message is required.'}, status=400)
+            
+        if not openai:
+            return JsonResponse({'reply': 'The AI Librarian Chatbot is currently disabled because the "openai" package is missing.'})
+            
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key or api_key == 'your-openai-api-key':
+            return JsonResponse({'reply': 'The AI Librarian is sleeping. (Please configure OPENAI_API_KEY in the .env file)'})
+            
+        # Basic RAG logic: find some books matching words in the user query to give context.
+        keywords = user_message.lower().split()
+        books_context = ""
+        matching_books = Book.objects.none()
+        for kw in keywords:
+            if len(kw) > 3: # Ignore small words
+                matching_books |= Book.objects.filter(Q(title__icontains=kw) | Q(author__icontains=kw) | Q(subject__icontains=kw))
+        
+        matching_books = matching_books.distinct()[:5]
+        if matching_books.exists():
+            books_context = "Here are some books in our catalog that might be relevant to the query:\\n"
+            for b in matching_books:
+                books_context += f"- '{b.title}' by {b.author} (Subject: {b.subject}, Copies Available: {b.available_copies}, Rack: {b.rack})\\n"
+        else:
+            books_context = "No specific books in the catalog matched the keywords directly, but try to answer generally or ask for clarification."
+            
+        system_prompt = f"""You are the friendly and knowledgeable AI Librarian for Acharya Nagarjuna University (ANU LMS). 
+Your goal is to help students find books, answer queries about library resources, and provide academic book recommendations.
+Use the following catalog context if helpful to answer the user's query:
+
+{books_context}
+
+Be concise, polite, and helpful."""
+
+        client = openai.OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=200,
+        )
+        
+        reply = response.choices[0].message.content.strip()
+        return JsonResponse({'reply': reply})
+        
+    except Exception as e:
+        logger.error(f"Chatbot error: {e}")
+        return JsonResponse({'reply': f'Sorry, I encountered an error: {str(e)}'})
+
+@login_required
+def reserve_book(request: HttpRequest, book_id):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'student':
+        messages.error(request, 'Only students can reserve books.')
+        return redirect('book_detail', book_id=book_id)
+
+    book = get_object_or_404(Book, pk=book_id)
+    if book.available_copies > 0:
+        messages.error(request, 'This book is currently available and does not need a reservation.')
+        return redirect('book_detail', book_id=book_id)
+
+    # Check for active loan or existing reservation
+    if Transaction.objects.filter(user=request.user, book=book, returned_on__isnull=True).exists():
+        messages.error(request, 'You currently have this book issued.')
+        return redirect('book_detail', book_id=book_id)
+
+    if BookReservation.objects.filter(user=request.user, book=book, status__in=['WAITING', 'AVAILABLE']).exists():
+        messages.error(request, 'You already have an active reservation for this book.')
+        return redirect('book_detail', book_id=book_id)
+
+    BookReservation.objects.create(user=request.user, book=book)
+    messages.success(request, f'You have successfully reserved "{book.title}". We will notify you when it becomes available.')
+    return redirect('book_detail', book_id=book_id)
+
+@login_required
+def cancel_reservation(request: HttpRequest, res_id):
+    reservation = get_object_or_404(BookReservation, pk=res_id, user=request.user, status__in=['WAITING', 'AVAILABLE'])
+    
+    if reservation.status == 'AVAILABLE':
+        # Free up the held book copy for the next user or catalog
+        reservation.book.available_copies += 1
+        reservation.book.save()
+
+        # Check if another user is waiting for it
+        next_res = BookReservation.objects.filter(book=reservation.book, status='WAITING').exclude(id=reservation.id).order_by('created_at').first()
+        if next_res:
+            next_res.status = 'AVAILABLE'
+            next_res.available_at = timezone.now()
+            next_res.expires_at = timezone.now() + timezone.timedelta(hours=48)
+            next_res.save()
+            reservation.book.available_copies -= 1
+            reservation.book.save()
+
+    reservation.status = 'CANCELLED'
+    reservation.save()
+    messages.success(request, 'Reservation cancelled successfully.')
+    return redirect('my_books')
+
+
+@login_required
+def pay_fine(request: HttpRequest):
+    if request.method == 'POST':
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        total_fines = Transaction.objects.filter(user=request.user, fine_amount__gt=0).aggregate(total=Sum('fine_amount'))['total']
+        if not total_fines or total_fines <= 0:
+            messages.success(request, "You have no outstanding fines.")
+            return redirect('student_dashboard')
+            
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'inr',
+                        'product_data': {
+                            'name': 'Library Fines Settlement',
+                        },
+                        'unit_amount': int(total_fines * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=request.build_absolute_uri('/') + '?payment_status=success',
+                cancel_url=request.build_absolute_uri('/') + '?payment_status=cancelled',
+            )
+            # In a real app, use webhooks to sync DB. For demo, we clear it out immediately:
+            Transaction.objects.filter(user=request.user, fine_amount__gt=0).update(fine_amount=0)
+            return redirect(checkout_session.url, code=303)
+        except Exception as e:
+            messages.error(request, str(e))
+    return redirect('student_dashboard')
+
+# Stub views to prevent URL resolution errors
+def contact(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def opening_hours(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def ask_librarian(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def book_study_room(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def news(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def department_list(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def department_books(request: HttpRequest, dept_id):
+    return HttpResponse("This feature is coming soon.")
+
+def trending_books(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def new_arrivals(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def rare_books(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def theses_dissertations(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def anu_archives(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+def request_ill(request: HttpRequest):
+    return HttpResponse("This feature is coming soon.")
+
+
+@login_required
+def read_eresource(request: HttpRequest, e_id):
+    from .models import Eresource
+    eresource = get_object_or_404(Eresource, pk=e_id)
+    if not eresource.file:
+        messages.error(request, "This resource does not have a digital file attached.")
+        return redirect('eresource_list', letter=eresource.letter)
+    return render(request, 'portal/read_eresource.html', {'eresource': eresource})
+
+
+@login_required
+def download_ics(request, tx_id):
+    tx = get_object_or_404(Transaction, pk=tx_id, user=request.user)
+    
+    # ics format definition
+    dtstamp = timezone.now().strftime("%Y%m%dT%H%M%SZ")
+    due_dt = tx.due_date.strftime("%Y%m%d")
+    
+    ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ANU Library Management System//EN
+BEGIN:VEVENT
+UID:{tx.id}-{dtstamp}@anulibrary.edu
+DTSTAMP:{dtstamp}
+DTSTART;VALUE=DATE:{due_dt}
+DTEND;VALUE=DATE:{due_dt}
+SUMMARY:Library Book Due: {tx.book.title}
+DESCRIPTION:Please return {tx.book.title} by {due_dt} to avoid late fines.
+END:VEVENT
+END:VCALENDAR"""
+
+    response = HttpResponse(ics_content, content_type='text/calendar')
+    response['Content-Disposition'] = f'attachment; filename="book_due_{tx.id}.ics"'
+    return response

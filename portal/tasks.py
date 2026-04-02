@@ -63,3 +63,47 @@ def send_request_approval_email(request_id, approved):
             )
     except BookRequest.DoesNotExist:
         pass
+
+
+@shared_task
+def send_due_reminders():
+    """Send reminders for upcoming due dates (3 days and 1 day before)."""
+    from datetime import timedelta
+    
+    # 1. Remind 3 Days Before
+    three_days_from_now = timezone.localdate() + timedelta(days=3)
+    upcoming_txs = Transaction.objects.filter(
+        status='ISSUED', 
+        returned_on__isnull=True, 
+        due_date=three_days_from_now
+    ).select_related("user", "book")
+    
+    for tx in upcoming_txs:
+        if tx.user.email:
+            send_mail(
+                subject=f"Library Reminder: '{tx.book.title}' is due in 3 days",
+                message=f"Dear {tx.user.username},\n\nPlease return '{tx.book.title}' on or before {tx.due_date}.",
+                from_email="library@anu.ac.in",
+                recipient_list=[tx.user.email],
+                fail_silently=True,
+            )
+
+    # 2. Remind exactly 1 Day Before
+    tomorrow = timezone.localdate() + timedelta(days=1)
+    tomorrow_txs = Transaction.objects.filter(
+        status='ISSUED', 
+        returned_on__isnull=True, 
+        due_date=tomorrow
+    ).select_related("user", "book")
+    
+    for tx in tomorrow_txs:
+        if tx.user.email:
+            send_mail(
+                subject=f"URGENT: '{tx.book.title}' is due tomorrow",
+                message=f"Dear {tx.user.username},\n\nPlease return '{tx.book.title}' tomorrow ({tx.due_date}) to avoid fines.",
+                from_email="library@anu.ac.in",
+                recipient_list=[tx.user.email],
+                fail_silently=True,
+            )
+
+    return f"Sent {upcoming_txs.count()} 3-day reminders and {tomorrow_txs.count()} 1-day reminders."

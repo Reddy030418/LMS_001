@@ -66,6 +66,17 @@ class Profile(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     is_active_member = models.BooleanField(default=True)
     role = models.CharField(max_length=20, choices=[('student', 'Student'), ('librarian', 'Librarian'), ('admin', 'Admin')], default='student', db_index=True)
+    
+    # Gamification
+    points = models.PositiveIntegerField(default=0)
+    reading_streak = models.PositiveIntegerField(default=0)
+    last_read_date = models.DateField(null=True, blank=True)
+
+    def calculate_badge(self):
+        if self.points >= 500: return 'Research Scholar'
+        if self.points >= 200: return 'Avid Reader'
+        if self.points >= 50: return 'Bookworm'
+        return 'Beginner'
 
     def __str__(self):
         return self.user.get_username()
@@ -125,7 +136,8 @@ class NewsItem(models.Model):
 class Eresource(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True)
-    url = models.URLField()
+    url = models.URLField(blank=True, null=True)
+    file = models.FileField(upload_to='eresources/', blank=True, null=True)
     letter = models.CharField(max_length=1)   # A–Z or #
 
     class Meta:
@@ -133,3 +145,24 @@ class Eresource(models.Model):
 
     def __str__(self):
         return self.name
+
+class BookReservation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[('WAITING', 'Waiting'), ('AVAILABLE', 'Available'), ('CANCELLED', 'Cancelled')], default='WAITING')
+    available_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.book.title} reserved by {self.user.username}"
+
+class InterLibraryLoanRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255, blank=True, null=True)
+    isbn = models.CharField(max_length=20, blank=True, null=True)
+    publisher_info = models.CharField(max_length=255, blank=True, null=True)
+    requested_on = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[('PENDING', 'Pending'), ('IN_TRANSIT', 'In Transit'), ('AVAILABLE', 'Available'), ('COMPLETED', 'Completed'), ('REJECTED', 'Rejected')], default='PENDING')
+    admin_notes = models.TextField(blank=True, null=True)

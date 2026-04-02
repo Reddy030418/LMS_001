@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: lms_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-anu_lms}
+      POSTGRES_USER: ${DB_USER:-lms}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-satya}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-lms} -d ${DB_NAME:-anu_lms}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: lms_redis
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    container_name: lms_web
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate &&
+             daphne -b 0.0.0.0 -p 8000 anu_lms.asgi:application"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=${DB_NAME:-anu_lms}
+      - DB_USER=${DB_USER:-lms}
+      - DB_PASSWORD=${DB_PASSWORD:-satya}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  celery:
+    build: .
+    container_name: lms_celery
+    command: celery -A anu_lms worker -l info
+    volumes:
+      - .:/app
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=${DB_NAME:-anu_lms}
+      - DB_USER=${DB_USER:-lms}
+      - DB_PASSWORD=${DB_PASSWORD:-satya}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - db
+
+  celery_beat:
+    build: .
+    container_name: lms_celery_beat
+    command: celery -A anu_lms beat -l info
+    volumes:
+      - .:/app
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=${DB_NAME:-anu_lms}
+      - DB_USER=${DB_USER:-lms}
+      - DB_PASSWORD=${DB_PASSWORD:-satya}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  postgres_data:

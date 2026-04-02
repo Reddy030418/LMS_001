@@ -1028,6 +1028,101 @@
 
     /* ── Smooth page transition ─────────────────────────────── */
     .app-view { animation: fadeInUp 0.5s ease-out; }
+
+    /* ── Floating Chatbot ───────────────────────────────────── */
+    .chatbot-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s;
+      transform: translateY(calc(100% - 50px));
+      backdrop-filter: blur(10px);
+    }
+    .chatbot-widget.open {
+      transform: translateY(0);
+    }
+    .chatbot-header {
+      padding: 12px 15px;
+      background: var(--gradient-hero);
+      color: #fff;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .chatbot-header .toggle-icon { margin-left: auto; }
+    .chatbot-body {
+      height: 300px;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chatbot-body::-webkit-scrollbar { width: 6px; }
+    .chatbot-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    .chat-message {
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      max-width: 85%;
+      line-height: 1.4;
+    }
+    .chat-message.bot {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .chat-message.user {
+      background: var(--accent-indigo);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .chatbot-footer {
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.2);
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+    }
+    .chatbot-footer input {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+    }
+    .chatbot-footer input:focus {
+      outline: none;
+      border-color: var(--accent-indigo);
+    }
+    .chatbot-footer button {
+      background: var(--accent-indigo);
+      color: #fff;
+      border: none;
+      padding: 0 15px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .chatbot-footer button:hover {
+      background: #4f46e5;
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -1272,6 +1367,139 @@
       });
     });
   </script>
+
+  <!-- Floating Chatbot Widget -->
+  <div class="chatbot-widget" id="chatbotWidget">
+    <div class="chatbot-header" onclick="toggleChat()">
+      <i class="fa-solid fa-robot"></i>
+      <span>AI Librarian</span>
+      <i class="fa-solid fa-chevron-up toggle-icon" id="chatToggleIcon"></i>
+    </div>
+    <div class="chatbot-body" id="chatbotBody">
+      <div class="chat-message bot">
+        Hello! I'm the ANU AI Librarian. How can I help you find a book today?
+      </div>
+    </div>
+    <div class="chatbot-footer">
+      <input type="text" id="chatInput" placeholder="Ask a question..." onkeypress="handleChatPress(event)">
+      <button onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <script>
+    function toggleChat() {
+      const widget = document.getElementById('chatbotWidget');
+      const icon = document.getElementById('chatToggleIcon');
+      widget.classList.toggle('open');
+      if(widget.classList.contains('open')) {
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        document.getElementById('chatInput').focus();
+      } else {
+        icon.classList.add('fa-chevron-up');
+        icon.classList.remove('fa-chevron-down');
+      }
+    }
+
+    function handleChatPress(e) {
+      if(e.key === 'Enter') sendChatMessage();
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if(!message) return;
+      
+      const body = document.getElementById('chatbotBody');
+      body.innerHTML += `<div class="chat-message user">${message}</div>`;
+      input.value = '';
+      body.scrollTop = body.scrollHeight;
+
+      // Add typing indicator
+      const typingId = 'typing-' + Date.now();
+      body.innerHTML += `<div class="chat-message bot" id="${typingId}"><i class="fa-solid fa-ellipsis"></i></div>`;
+      body.scrollTop = body.scrollHeight;
+
+      fetch('/api/chatbot/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ message: message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById(typingId).remove();
+        if(data.reply) {
+          let text = data.reply.replace(/\n/g, '<br>');
+          body.innerHTML += `<div class="chat-message bot">${text}</div>`;
+        } else if (data.error) {
+          body.innerHTML += `<div class="chat-message bot text-danger">${data.error}</div>`;
+        }
+        body.scrollTop = body.scrollHeight;
+      })
+      .catch(err => {
+        document.getElementById(typingId).remove();
+        body.innerHTML += `<div class="chat-message bot text-danger">Network error.</div>`;
+      });
+    }
+  </script>
+
+  <!-- WebSocket Notifications Toast Container -->
+  <div class="toast-container position-fixed bottom-0 start-0 p-3" style="z-index: 1055;">
+    <!-- Toasts will be injected here -->
+  </div>
+
+  {% if user.is_authenticated %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const loc = window.location;
+      const wsStart = loc.protocol === 'https:' ? 'wss://' : 'ws://';
+      const endpoint = wsStart + loc.host + '/ws/notifications/';
+      const notificationSocket = new WebSocket(endpoint);
+
+      notificationSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const title = data.title || 'Notification';
+        const message = data.message;
+        const type = data.type || 'info';
+        
+        let icon = '<i class="fa-solid fa-info-circle text-primary me-2"></i>';
+        if (type === 'success') icon = '<i class="fa-solid fa-check-circle text-success me-2"></i>';
+        if (type === 'error') icon = '<i class="fa-solid fa-exclamation-triangle text-danger me-2"></i>';
+        if (type === 'warning') icon = '<i class="fa-solid fa-bell text-warning me-2"></i>';
+
+        const toastHtml = `
+          <div class="toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" style="background:var(--bg-card);border-radius:var(--radius-md);">
+            <div class="toast-header" style="background:var(--bg-secondary);border-bottom:1px solid var(--border-color);border-top-left-radius:var(--radius-md);border-top-right-radius:var(--radius-md);color:var(--text-primary);">
+              ${icon}
+              <strong class="me-auto">${title}</strong>
+              <small class="text-muted">Just now</small>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" style="color:var(--text-secondary);">
+              ${message}
+            </div>
+          </div>
+        `;
+        
+        const container = document.querySelector('.toast-container');
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        
+        const toastEl = container.lastElementChild;
+        if (typeof bootstrap !== 'undefined') {
+            const bsToast = new bootstrap.Toast(toastEl, { delay: 5000 });
+            bsToast.show();
+        }
+      };
+
+      notificationSocket.onclose = function(e) {
+        console.log('Notification socket closed');
+      };
+    });
+  </script>
+  {% endif %}
 
   {% block extra_js %}{% endblock %}
 </body>

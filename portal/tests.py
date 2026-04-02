@@ -166,3 +166,15 @@ class PortalViewsTest(TestCase):
         # Unauthenticated users shouldn't be able to request
         response = self.client.post('/request-book/1/')
         self.assertEqual(response.status_code, 401)
+
+    def test_gamification_badge_calculation(self):
+        profile, _ = Profile.objects.get_or_create(user=User.objects.create(username='tester'))
+        profile.points = 150
+        profile.save()
+        self.assertEqual(profile.calculate_badge(), 'Research Scholar')
+        profile.points = 20
+        self.assertEqual(profile.calculate_badge(), 'Beginner')
+
+    def test_pay_fine_auth_required(self):
+        response = self.client.post('/fines/pay/')
+        self.assertRedirects(response, '/auth/login/?next=/fines/pay/')
